@@ -1,0 +1,22 @@
+PODS:
+  - adv_camera (0.0.1):
+    - Flutter
+  - Flutter (1.0.0)
+
+DEPENDENCIES:
+  - adv_camera (from `.symlinks/plugins/adv_camera/ios`)
+  - Flutter (from `.symlinks/flutter/ios`)
+
+EXTERNAL SOURCES:
+  adv_camera:
+    :path: ".symlinks/plugins/adv_camera/ios"
+  Flutter:
+    :path: ".symlinks/flutter/ios"
+
+SPEC CHECKSUMS:
+  adv_camera: 0e954c22d5a993a38ecce7581ade87ecf5660523
+  Flutter: 58dd7d1b27887414a370fcccb9e645c08ffd7a6a
+
+PODFILE CHECKSUM: ebd43b443038e611b86ede96e613bd6033c49497
+
+COCOAPODS: 1.6.1

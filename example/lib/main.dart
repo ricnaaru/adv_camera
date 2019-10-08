@@ -1,9 +1,7 @@
-import 'package:flutter/material.dart';
 import 'dart:io';
 
-import 'package:flutter/services.dart';
-import 'package:path/path.dart';
 import 'package:adv_camera/adv_camera.dart';
+import 'package:flutter/material.dart';
 
 void main() => runApp(MyApp());
 
