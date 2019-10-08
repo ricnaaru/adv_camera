@@ -1,19 +1,12 @@
-# Advanced Camera
+import 'package:flutter/material.dart';
+import 'dart:io';
 
-This is our custom Camera that enabling you to tap focus, zoom, flashlight
+import 'package:flutter/services.dart';
+import 'package:path/path.dart';
+import 'package:adv_camera/adv_camera.dart';
 
-*Note*: This plugin is still under development, and some Components might not be available yet or still has so many bugs.
+void main() => runApp(MyApp());
 
-## Installation
-
-First, add `adv_camera` as a [dependency in your pubspec.yaml file](https://flutter.io/platform-plugins/).
-
-```
-adv_camera: ^0.0.1
-```
-
-## Example
-```
 class MyApp extends StatefulWidget {
   @override
   _MyAppState createState() => _MyAppState();
@@ -185,4 +178,3 @@ class _MyAppState extends State<MyApp> {
     });
   }
 }
-```

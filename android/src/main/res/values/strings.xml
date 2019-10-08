@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">WhatsappCamera</string>
+
+    <string name="file_limit_size_upload_format">Files must be less than %sMB</string>
+</resources>
