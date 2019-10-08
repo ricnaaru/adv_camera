@@ -1,8 +1,8 @@
 name: adv_camera
-description: A new Flutter plugin.
+description: An advanced camera with features
 version: 0.0.1
-author:
-homepage:
+author: Richardo <richardothayeb@gmail.com>
+homepage: https://github.com/ricnaaru/adv_camera
 
 environment:
   sdk: ">=2.1.0 <3.0.0"
