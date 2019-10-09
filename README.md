@@ -26,7 +26,8 @@ Or in text format add the key:
 
 ### Android
 
-There is no need to add configuration for Android
+For Android's permission, you have to configure it yourself (using Dexter, etc.).
+This plugin is made to support my other plugin [adv_image_picker](https://pub.dev/packages/adv_image_picker#-readme-tab-), so this permission is handled in adv_image_picker
 
 ## Example
 ```

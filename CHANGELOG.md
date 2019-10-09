@@ -1,3 +1,8 @@
+## 0.0.2
+
+- Some bug fixes
+- Clean up unnecessary codes
+
 ## 0.0.1
 
 Initial release with these features
