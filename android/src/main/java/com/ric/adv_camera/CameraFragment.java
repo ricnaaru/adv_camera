@@ -8,7 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-public class FooFragment extends Fragment {
+public class CameraFragment extends Fragment {
     FragmentLifecycleListener listener;
     private View view;
 
@@ -26,8 +26,8 @@ public class FooFragment extends Fragment {
             view = inflater.inflate(R.layout.fragment_foo, container, false);
         } catch (InflateException e) {
             /* map is already there, just return view as it is */
-            Log.d("ricric", "map is already there, just return view as it is");
         }
+
         return view;
     }
 
@@ -41,8 +41,8 @@ public class FooFragment extends Fragment {
 
     @Override
     public void onPause() {
+        Log.d("AdvCamera", "onPause");
         super.onPause();
-        Log.d("tag", "onPause() called");
         if (listener != null)
             listener.onPause();
     }
@@ -50,7 +50,6 @@ public class FooFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        Log.d("tag", "onResume() called");
         if (listener != null)
             listener.onResume();
     }
@@ -58,7 +57,7 @@ public class FooFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
+        Log.d("AdvCamera", "onDestroyView");
         super.onDestroyView();
-        Log.d("ricric", "onDestroyView");
     }
 }

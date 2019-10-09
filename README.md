@@ -6,11 +6,27 @@ This is our custom Camera that enabling you to tap focus, zoom, flashlight
 
 ## Installation
 
-First, add `adv_camera` as a [dependency in your pubspec.yaml file](https://flutter.io/platform-plugins/).
+First, add `adv_camera` as a [dependency in your pubspec.yaml file](https://flutter.io/using-packages/).
 
+### iOS
+
+Add two rows to the `ios/Runner/Info.plist`:
+
+* one with the key `Privacy - Camera Usage Description` and a usage description.
+* and one with the key `Privacy - Microphone Usage Description` and a usage description.
+
+Or in text format add the key:
+
+```xml
+<key>NSCameraUsageDescription</key>
+<string>Can I use the camera please?</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>Can I use the mic please?</string>
 ```
-adv_camera: ^0.0.1
-```
+
+### Android
+
+There is no need to add configuration for Android
 
 ## Example
 ```

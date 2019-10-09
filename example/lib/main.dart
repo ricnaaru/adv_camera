@@ -26,7 +26,9 @@ class _MyAppState extends State<MyApp> {
               children: [
                 Column(
                   children: [
-                    Container(
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Container(
                       color: Colors.purple,
                       child: Row(
                         children: [
@@ -57,33 +59,36 @@ class _MyAppState extends State<MyApp> {
                         ],
                       ),
                     ),
-                    Container(
+          ),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Container(
                       color: Colors.orange,
                       child: Row(
                         children: [
                           FlatButton(
-                            child: Text("1:1"),
+                            child: Text(Platform.isAndroid ? "1:1" : "Low"),
                             onPressed: () {
                               cameraController.setPreviewRatio(CameraPreviewRatio.r1);
                               cameraController.setSessionPreset(CameraSessionPreset.low);
                             },
                           ),
                           FlatButton(
-                            child: Text("4:3"),
+                            child: Text(Platform.isAndroid ? "4:3" : "Medium"),
                             onPressed: () {
                               cameraController.setPreviewRatio(CameraPreviewRatio.r4_3);
                               cameraController.setSessionPreset(CameraSessionPreset.medium);
                             },
                           ),
                           FlatButton(
-                            child: Text("11:9"),
+                            child: Text(Platform.isAndroid ? "11:9" : "High"),
                             onPressed: () {
                               cameraController.setPreviewRatio(CameraPreviewRatio.r11_9);
                               cameraController.setSessionPreset(CameraSessionPreset.high);
                             },
                           ),
                           FlatButton(
-                            child: Text("16:9"),
+                            child: Text(Platform.isAndroid ? "16:9" : "Best"),
                             onPressed: () {
                               cameraController.setPreviewRatio(CameraPreviewRatio.r16_9);
                               cameraController.setSessionPreset(CameraSessionPreset.photo);
@@ -91,20 +96,17 @@ class _MyAppState extends State<MyApp> {
                           ),
                         ],
                       ),
-                    ),
+              ),
+            ),
                     Container(
                       color: Colors.blue,
                       child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
                         child: Row(
                           children: this.pictureSizes.map((pictureSize) {
                             return FlatButton(
                               child: Text(pictureSize),
                               onPressed: () {
-                                print("pictureSize ($pictureSize) => ${pictureSize.indexOf(":")}");
-                                print(
-                                    "pictureSize ($pictureSize) => ${pictureSize.substring(0, pictureSize.indexOf(":"))}");
-                                print(
-                                    "pictureSize ($pictureSize) => ${pictureSize.substring(pictureSize.indexOf(":") + 1, pictureSize.length)}");
                                 cameraController.setPictureSize(
                                     int.tryParse(
                                         pictureSize.substring(0, pictureSize.indexOf(":"))),
@@ -114,7 +116,6 @@ class _MyAppState extends State<MyApp> {
                             );
                           }).toList(),
                         ),
-                        scrollDirection: Axis.horizontal,
                       ),
                     ),
                     Expanded(
@@ -147,18 +148,11 @@ class _MyAppState extends State<MyApp> {
                 onPressed: () {
                   cameraController.switchCamera();
                 }),
+            Container(height: 16.0),
             FloatingActionButton(
                 child: Icon(Icons.camera),
                 onPressed: () {
-                  print("camera");
                   cameraController.captureImage();
-                }),
-            FloatingActionButton(
-                child: Icon(Icons.camera),
-                onPressed: () {
-                  setState(() {
-                    cameraController.setSavePath("/storage/emulated/0/ricricric");
-                  });
                 }),
           ])),
     );

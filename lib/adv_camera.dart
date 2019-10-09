@@ -149,10 +149,6 @@ class _AdvCameraState extends State<AdvCamera> {
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        print("constraints.maxWidth => ${constraints.maxWidth}");
-        print("constraints.maxHeight => ${constraints.maxHeight}");
-        print("devicePixelRatio => ${MediaQuery.of(context).devicePixelRatio}");
-
         double lesser;
         double greater;
         double widthTemp;
@@ -226,8 +222,6 @@ class _AdvCameraState extends State<AdvCamera> {
           width = constraints.maxWidth;
           height = constraints.maxHeight;
         }
-        print("width => ${width}");
-        print("height => ${height}");
 
         return ClipRect(
           child: OverflowBox(
@@ -245,7 +239,6 @@ class _AdvCameraState extends State<AdvCamera> {
   }
 
   Future<void> onPlatformViewCreated(int id) async {
-    print("init flutter => plugins.flutter.io/adv_camera/$id");
     final AdvCameraController controller = await AdvCameraController.init(
       id,
       this,

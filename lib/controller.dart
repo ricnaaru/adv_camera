@@ -93,12 +93,15 @@ class AdvCameraController {
         previewRatio = "1:1";
         break;
     }
-    await channel.invokeMethod('setPreviewRatio', <String, dynamic>{
+
+    bool success = await channel.invokeMethod('setPreviewRatio', <String, dynamic>{
       'previewRatio': previewRatio,
     });
 
-    _advCameraState._cameraPreviewRatio = cameraPreviewRatio;
-    _advCameraState.setState(() {});
+    if (success) {
+      _advCameraState._cameraPreviewRatio = cameraPreviewRatio;
+      _advCameraState.setState(() {});
+    }
   }
 
   Future<void> captureImage() async {

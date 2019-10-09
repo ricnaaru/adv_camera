@@ -6,8 +6,8 @@
     android:orientation="vertical">
 
     <fragment
-        android:name="com.ric.adv_camera.FooFragment"
-        android:id="@+id/fooFragment"
+        android:name="com.ric.adv_camera.CameraFragment"
+        android:id="@+id/cameraFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 

@@ -370,6 +370,20 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
             self.captureSession.startRunning()
             DispatchQueue.main.async {
                 videoPreviewLayer.frame = self.previewView.bounds
+                
+                if (self.camera!.hasTorch) {
+                    do {
+                        try self.camera!.lockForConfiguration()
+                    } catch {
+                        print("aaaa")
+                    }
+                    
+                    self.camera!.flashMode = self.flashType
+                    self.camera!.torchMode = self.torchType
+                }
+                
+                // unlock your device
+                self.camera!.unlockForConfiguration()
             }
         }
     }
@@ -477,7 +491,6 @@ public class BoundsObservableView: UIView {
             } else if orientation == UIInterfaceOrientation.portrait {
                 videoPreviewLayer.connection?.videoOrientation = .portrait
             } else if orientation == UIInterfaceOrientation.portraitUpsideDown {
-                print("layoutSubviews => portraitUpsideDown")
                 videoPreviewLayer.connection?.videoOrientation = .portraitUpsideDown
             }
             
