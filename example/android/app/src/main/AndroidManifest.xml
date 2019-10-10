@@ -50,10 +50,5 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <!--<activity-->
-            <!--android:name="com.ric.adv_camera.PhotoVideoRedirectActivity"-->
-            <!--android:screenOrientation="portrait" />-->
-        <!--<activity android:name="com.ric.adv_camera.WhatsappCameraActivity"-->
-            <!--android:screenOrientation="landscape"/>-->
     </application>
 </manifest>

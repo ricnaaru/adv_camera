@@ -1,3 +1,8 @@
+## 0.0.3
+
+- Fix ios bug when tap to focus
+- Fix android capture image to return success
+
 ## 0.0.2+2
 
 - Migrate to Swift 4.2

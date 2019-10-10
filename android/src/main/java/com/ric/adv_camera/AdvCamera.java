@@ -223,6 +223,8 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             result.success(true);
         } else if (methodCall.method.equals("captureImage")) {
             captureImage();
+
+            result.success(true);
         } else if (methodCall.method.equals("switchCamera")) {
             if (cameraFacing == 0) {
                 cameraFacing = 1;

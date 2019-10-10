@@ -26,6 +26,8 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
     var orientationLast = UIInterfaceOrientation(rawValue: 0)!
     var motionManager: CMMotionManager?
     
+    var videoPreviewLayer: AVCaptureVideoPreviewLayer!
+    
     public func view() -> UIView {
         return previewView
     }
@@ -275,18 +277,13 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
     }
     
     @objc func handleTap(_ sender: UITapGestureRecognizer? = nil) {
-        let screenSize = self.previewView.bounds.size
-        
-        let x = (sender?.location(in: self.previewView).y)! / screenSize.height
-        let y = 1.0 - (sender?.location(in: self.previewView).x)! / screenSize.width
-        let focusPoint = CGPoint(x: x, y: y)
-        
+        let devicePoint: CGPoint = (self.videoPreviewLayer).captureDevicePointConverted(fromLayerPoint: sender!.location(in: sender!.view))
         if let device = self.camera {
             do {
                 if (device.isFocusPointOfInterestSupported){
                     try device.lockForConfiguration()
                     
-                    device.focusPointOfInterest = focusPoint
+                    device.focusPointOfInterest = devicePoint
                     
                     device.focusMode = .autoFocus
                     device.unlockForConfiguration()
@@ -345,8 +342,6 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
     }
     
     func setupLivePreview() {
-        var videoPreviewLayer: AVCaptureVideoPreviewLayer!
-        
         videoPreviewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
         
         videoPreviewLayer.videoGravity = .resizeAspectFill
@@ -369,7 +364,7 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
         DispatchQueue.global(qos: .userInitiated).async { //[weak self] in
             self.captureSession.startRunning()
             DispatchQueue.main.async {
-                videoPreviewLayer.frame = self.previewView.bounds
+                self.videoPreviewLayer.frame = self.previewView.bounds
                 
                 if (self.camera!.hasTorch) {
                     do {
