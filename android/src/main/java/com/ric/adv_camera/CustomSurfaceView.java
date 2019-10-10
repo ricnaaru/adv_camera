@@ -1,9 +1,8 @@
 package com.ric.adv_camera;
 
 import android.content.Context;
-import android.graphics.Canvas;
-import android.hardware.Camera;
-import android.support.annotation.NonNull;
+
+import androidx.annotation.NonNull;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceView;

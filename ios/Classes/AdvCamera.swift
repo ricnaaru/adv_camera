@@ -431,7 +431,7 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
     
     func saveImage(image: UIImage) -> Bool {
         let newImage = rotateImage(image: image)!
-        guard let data = UIImageJPEGRepresentation(newImage, 1) ?? UIImagePNGRepresentation(newImage) else {
+        guard let data = newImage.jpegData(compressionQuality: 1) ?? newImage.pngData() else {
             return false
         }
         guard let directory = try? FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false) as NSURL else {

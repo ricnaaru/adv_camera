@@ -142,7 +142,7 @@ class _MyAppState extends State<MyApp> {
               ],
             ),
           ),
-          floatingActionButton: Column(mainAxisSize: MainAxisSize.min, children: [
+          floatingActionButton: Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
             FloatingActionButton(
                 child: Icon(Icons.switch_camera),
                 onPressed: () {

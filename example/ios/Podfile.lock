@@ -5,18 +5,18 @@ PODS:
 
 DEPENDENCIES:
   - adv_camera (from `.symlinks/plugins/adv_camera/ios`)
-  - Flutter (from `.symlinks/flutter/ios`)
+  - Flutter (from `.symlinks/flutter/ios-release`)
 
 EXTERNAL SOURCES:
   adv_camera:
     :path: ".symlinks/plugins/adv_camera/ios"
   Flutter:
-    :path: ".symlinks/flutter/ios"
+    :path: ".symlinks/flutter/ios-release"
 
 SPEC CHECKSUMS:
   adv_camera: 0e954c22d5a993a38ecce7581ade87ecf5660523
   Flutter: 58dd7d1b27887414a370fcccb9e645c08ffd7a6a
 
-PODFILE CHECKSUM: ebd43b443038e611b86ede96e613bd6033c49497
+PODFILE CHECKSUM: 57cf21e5654a957dfd0c58d9d6ebea5d2b404b08
 
 COCOAPODS: 1.6.1
