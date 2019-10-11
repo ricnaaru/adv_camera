@@ -1,3 +1,7 @@
+## 0.0.4
+
+- Add maxSize argument to resize captured image
+
 ## 0.0.3
 
 - Fix ios bug when tap to focus

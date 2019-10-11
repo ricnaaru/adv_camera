@@ -23,6 +23,7 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
     var flashType: AVCaptureDevice.FlashMode = .auto
     var torchType: AVCaptureDevice.TorchMode = .off
     var fileNamePrefix: String = ""
+    var maxSize: Int? = nil
     var orientationLast = UIInterfaceOrientation(rawValue: 0)!
     var motionManager: CMMotionManager?
     
@@ -105,6 +106,9 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                 }
             }
             
+            let maxSize = (dict["maxSize"] as? Int)
+            self.maxSize = maxSize
+            
             if (self.camera!.hasTorch) {
                 do {
                     try self.camera!.lockForConfiguration()
@@ -138,6 +142,11 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
             if call.method == "waitForCamera" {
                 result(nil)
             } else if call.method == "captureImage" {
+                if let dict = call.arguments as? [String: Any] {
+                    if let maxSize = (dict["maxSize"] as? Int) {
+                        self.maxSize = maxSize
+                    }
+                }
                 self.saveToCamera()
                 result(nil)
             } else if call.method == "setPreviewRatio" {
@@ -425,7 +434,8 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
     }
     
     func saveImage(image: UIImage) -> Bool {
-        let newImage = rotateImage(image: image)!
+        let resizedImage = resizeImage(image: image)!
+        let newImage = rotateImage(image: resizedImage)!
         guard let data = newImage.jpegData(compressionQuality: 1) ?? newImage.pngData() else {
             return false
         }
@@ -455,6 +465,21 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
         dict["path"] = fileURL?.path
         _channel.invokeMethod("onImageCaptured", arguments: dict)
         return true
+    }
+    
+    func resizeImage(image: UIImage) -> UIImage? {
+        if (self.maxSize == nil) {
+            return image
+        }
+        let scale = CGFloat(self.maxSize!) / image.size.width
+        let newWidth = image.size.width * scale
+        let newHeight = image.size.height * scale
+        UIGraphicsBeginImageContext(CGSize(width: newWidth, height: newHeight))
+        image.draw(in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return newImage
     }
 }
 

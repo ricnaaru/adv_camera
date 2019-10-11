@@ -104,11 +104,13 @@ class AdvCameraController {
     }
   }
 
-  Future<void> captureImage() async {
+  Future<void> captureImage({int maxSize}) async {
     // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
     // https://github.com/flutter/flutter/issues/26431
     // ignore: strong_mode_implicit_dynamic_method
-    await channel.invokeMethod('captureImage', null);
+    await channel.invokeMethod('captureImage', <String, dynamic>{
+      'maxSize': maxSize,
+    });
   }
 
   Future<void> switchCamera() async {

@@ -6,10 +6,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.Rect;
-import android.graphics.RectF;
 import android.hardware.Camera;
 import android.hardware.SensorManager;
-import android.media.ExifInterface;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
@@ -22,10 +20,12 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -54,6 +54,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private SavePicTask savePicTask;
     private Camera.PictureCallback jpegCallback;
     private File folder = null;
+    private Integer maxSize;
     private String savePath;
     private String fileNamePrefix = "adv_camera";
     private int iOrientation = 0;
@@ -73,7 +74,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         methodChannel =
                 new MethodChannel(registrar.messenger(), "plugins.flutter.io/adv_camera/" + id);
         methodChannel.setMethodCallHandler(this);
-        view = registrar.activity().getLayoutInflater().inflate(R.layout.whatsapp_activity_camera, null);
+        view = registrar.activity().getLayoutInflater().inflate(R.layout.activity_camera, null);
         imgSurface = view.findViewById(R.id.imgSurface);
         CameraFragment cameraFragment = (CameraFragment) activity.getFragmentManager().findFragmentById(R.id.cameraFragment);
         imgSurface.setFocusable(true);
@@ -97,6 +98,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             Object savePath = params.get("savePath");
             Object previewRatio = params.get("previewRatio");
             Object fileNamePrefix = params.get("fileNamePrefix");
+            Object maxSize = params.get("maxSize");
 
             if (initialCamera != null) {
                 if (initialCamera.equals("front")) {
@@ -124,6 +126,10 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
             if (fileNamePrefix != null) {
                 this.fileNamePrefix = fileNamePrefix.toString();
+            }
+
+            if (maxSize != null) {
+                this.maxSize = (Integer) maxSize;
             }
         }
 
@@ -222,6 +228,17 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
             result.success(true);
         } else if (methodCall.method.equals("captureImage")) {
+            Integer maxSize = null;
+
+            if (methodCall.arguments instanceof HashMap) {
+                Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
+                maxSize = params.get("maxSize") == null ? null : (Integer) params.get("maxSize");
+            }
+
+            if (maxSize != null) {
+                this.maxSize = maxSize;
+            }
+
             captureImage();
 
             result.success(true);
@@ -565,6 +582,20 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             if (Build.MODEL.equalsIgnoreCase("LGM-G600L")) {
                 //for now there's a case for LGM-G600L phone that its rotation degree exceeded by 90
                 rotation -= 90;
+            }
+
+            if (maxSize != null) {
+                double initialWidth = bitmap.getWidth();
+                double initialHeight = bitmap.getHeight();
+                int width = initialHeight < initialWidth ? maxSize : (int) (initialWidth / initialHeight * maxSize);
+                int height = initialWidth <= initialHeight ? maxSize : (int) (initialHeight / initialWidth * maxSize);
+
+                Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, width,
+                        height, true);
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+
+                bitmap = resizedBitmap;
             }
 
             if (rotation != 0) {

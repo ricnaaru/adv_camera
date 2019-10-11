@@ -23,7 +23,7 @@ public class CameraFragment extends Fragment {
                 parent.removeView(view);
         }
         try {
-            view = inflater.inflate(R.layout.fragment_foo, container, false);
+            view = inflater.inflate(R.layout.fragment_camera, container, false);
         } catch (InflateException e) {
             /* map is already there, just return view as it is */
         }

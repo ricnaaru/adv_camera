@@ -123,8 +123,8 @@ class _AdvCameraState extends State<AdvCamera> {
       "initialCameraType": widget.initialCameraType == CameraType.rear ? "rear" : "front",
       "previewRatio": previewRatio,
       "sessionPreset": sessionPreset,
-    "flashType": flashType,
-    "fileNamePrefix": "adv_camera",
+      "flashType": flashType,
+      "fileNamePrefix": "adv_camera",
     };
 
     Widget camera;
