@@ -434,8 +434,8 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
     }
     
     func saveImage(image: UIImage) -> Bool {
-        let resizedImage = resizeImage(image: image)!
-        let newImage = rotateImage(image: resizedImage)!
+        let rotatedImage = rotateImage(image: image)!
+        let newImage = resizeImage(image: rotatedImage)!
         guard let data = newImage.jpegData(compressionQuality: 1) ?? newImage.pngData() else {
             return false
         }

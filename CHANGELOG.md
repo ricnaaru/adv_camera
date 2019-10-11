@@ -1,3 +1,7 @@
+## 0.0.5
+
+- Fix ios wrong rotation after resized
+
 ## 0.0.4
 
 - Add maxSize argument to resize captured image
