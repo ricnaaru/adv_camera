@@ -1,3 +1,7 @@
+## 0.0.6
+
+- Add bestPictureSize parameter for initial run on Android, because each device's default picture size may vary, example on MI 8 Lite, its default picture size is the lowest
+
 ## 0.0.5
 
 - Fix ios wrong rotation after resized

@@ -30,6 +30,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -63,6 +65,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private float mDist;
     private Camera.Size pictureSize;
     private String flashType = Camera.Parameters.FLASH_MODE_AUTO;
+    private boolean bestPictureSize;
 
     AdvCamera(
             int id,
@@ -99,6 +102,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             Object previewRatio = params.get("previewRatio");
             Object fileNamePrefix = params.get("fileNamePrefix");
             Object maxSize = params.get("maxSize");
+            Object bestPictureSize = params.get("bestPictureSize");
 
             if (initialCamera != null) {
                 if (initialCamera.equals("front")) {
@@ -130,6 +134,10 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
             if (maxSize != null) {
                 this.maxSize = (Integer) maxSize;
+            }
+
+            if (bestPictureSize != null) {
+                this.bestPictureSize = Boolean.valueOf(bestPictureSize.toString());
             }
         }
 
@@ -394,7 +402,19 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         try {
             Camera.Parameters param = camera.getParameters();
 
-            pictureSize = param.getPictureSize();
+            if (this.bestPictureSize) {
+                List<Camera.Size> sizes2 = param.getSupportedPictureSizes();
+                Collections.sort(sizes2, new Comparator<Camera.Size>() {
+                    @Override
+                    public int compare(Camera.Size o1, Camera.Size o2) {
+                        return (o2.width-o1.width) + (o2.height-o1.height);
+                    }
+                });
+
+                pictureSize = sizes2.get(0);
+            } else {
+                pictureSize = param.getPictureSize();
+            }
 
             List<Camera.Size> sizes = param.getSupportedPreviewSizes();
             Camera.Size selectedSize = sizes.get(0);
@@ -404,6 +424,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                     break;
                 }
             }
+
             //get diff to get perfact preview sizes
             DisplayMetrics displaymetrics = new DisplayMetrics();
             activity.getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
