@@ -1,12 +1,14 @@
 package com.ric.adv_camera;
 
-import android.app.Fragment;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.InflateException;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
+import androidx.fragment.app.Fragment;
 
 public class CameraFragment extends Fragment {
     FragmentLifecycleListener listener;
@@ -26,6 +28,13 @@ public class CameraFragment extends Fragment {
             view = inflater.inflate(R.layout.fragment_camera, container, false);
         } catch (InflateException e) {
             /* map is already there, just return view as it is */
+        }
+
+        int currentOrientation = getContext().getResources().getConfiguration().orientation;
+        if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+            Log.d("ricric", "initial => Landscape");
+        } else {
+            Log.d("ricric", "initial => Portrait");
         }
 
         return view;

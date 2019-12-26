@@ -34,7 +34,7 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "com.ric.adv_camera_example"
-        minSdkVersion 16
+        minSdkVersion 23
         targetSdkVersion 28
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
@@ -57,5 +57,6 @@ flutter {
 dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.1.0'
+    implementation "androidx.fragment:fragment:1.0.0"
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'
 }
