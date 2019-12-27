@@ -2,20 +2,13 @@ package com.ric.adv_camera;
 
 import android.annotation.SuppressLint;
 import android.graphics.Rect;
-import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
-import android.hardware.camera2.CameraMetadata;
-import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.TotalCaptureResult;
-import android.hardware.camera2.params.MeteringRectangle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-
-import androidx.annotation.NonNull;
 
 public class CameraFocusOnTouchHandler implements View.OnTouchListener {
 
@@ -43,88 +36,126 @@ public class CameraFocusOnTouchHandler implements View.OnTouchListener {
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
+        int allowControl = mCameraCharacteristics.get(CameraCharacteristics.CONTROL_MAX_REGIONS_AF);
 
-        //Override in your touch-enabled view (this can be different than the view you use for displaying the cam preview)
-
-        final int actionMasked = motionEvent.getActionMasked();
-        if (actionMasked != MotionEvent.ACTION_DOWN) {
-            return false;
-        }
-        if (mManualFocusEngaged) {
-            Log.d(TAG, "Manual focus already engaged");
-            return true;
-        }
-
+        if (allowControl == 0) return false;
         final Rect sensorArraySize = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
 
-        //TODO: here I just flip x,y, but this needs to correspond with the sensor orientation (via SENSOR_ORIENTATION)
-        final int y = (int) ((motionEvent.getX() / (float) view.getWidth()) * (float) sensorArraySize.height());
-        final int x = (int) ((motionEvent.getY() / (float) view.getHeight()) * (float) sensorArraySize.width());
-        final int halfTouchWidth = 50; //(int)motionEvent.getTouchMajor(); //TODO: this doesn't represent actual touch size in pixel. Values range in [3, 10]...
-        final int halfTouchHeight = 50; //(int)motionEvent.getTouchMinor();
-        MeteringRectangle focusAreaTouch = new MeteringRectangle(Math.max(x - halfTouchWidth, 0),
-                Math.max(y - halfTouchHeight, 0),
-                halfTouchWidth * 2,
-                halfTouchHeight * 2,
-                MeteringRectangle.METERING_WEIGHT_MAX - 1);
+        int sensorWidth = sensorArraySize.width();
+        int sensorHeight = sensorArraySize.height();
 
-        CameraCaptureSession.CaptureCallback captureCallbackHandler = new CameraCaptureSession.CaptureCallback() {
-            @Override
-            public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
-                super.onCaptureCompleted(session, request, result);
-                mManualFocusEngaged = false;
+        final float viewWidth = (float) view.getWidth();
+        final float viewHeight = (float) view.getHeight();
+        final int y = (int) ((motionEvent.getX() / viewWidth) * (float) sensorHeight);
+        final int x = (int) ((motionEvent.getY() / viewHeight) * (float) sensorWidth);
+        Log.d(TAG, "sensor: " + sensorWidth + " x " + sensorHeight);
+        Log.d(TAG, "motionEvent: " + motionEvent.getX() + " x " + motionEvent.getY());
+        Log.d(TAG, "view ize: " + viewWidth + " x " + viewHeight);
 
-                if (request.getTag() == "FOCUS_TAG") {
-                    //the focus trigger is complete - resume repeating (preview surface will get frames), clear AF trigger
-                    mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, null);
-                    try {
-                        mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), null, null);
-                    } catch (CameraAccessException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
 
-            @Override
-            public void onCaptureFailed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureFailure failure) {
-                super.onCaptureFailed(session, request, failure);
-                Log.e(TAG, "Manual AF failure: " + failure);
-                mManualFocusEngaged = false;
-            }
-        };
+        /// kiri y = viewWidth - x; x = y
 
-        //first stop the existing repeating request
-        try {
-            mCaptureSession.stopRepeating();
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
+        6xx12xx1920=>x
 
-        //cancel any existing AF trigger (repeated touches, etc.)
-        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
-        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
-        try {
-            mCaptureSession.capture(mPreviewRequestBuilder.build(), captureCallbackHandler, mBackgroundHandler);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
+            1x10x1080=>y
 
-        //Now add a new AF trigger with focus region
-        if (isMeteringAreaAFSupported()) {
-            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{focusAreaTouch});
-        }
-        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
-        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
-        mPreviewRequestBuilder.setTag("FOCUS_TAG"); //we'll capture this later for resuming the preview
+        float tempX = y;
+        float tempY = viewWidth - x;
+        Log.d(TAG, "Real: " + tempX + " x " + tempY);
 
-        //then we ask for a single request (not repeating!)
-        try {
-            mCaptureSession.capture(mPreviewRequestBuilder.build(), captureCallbackHandler, mBackgroundHandler);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-        mManualFocusEngaged = true;
+//        mCameraCharacteristics.get(CaptureRequest.DISTORTION_CORRECTION_MODE);
+
+//        //Override in your touch-enabled view (this can be different than the view you use for displaying the cam preview)
+//
+//        final int actionMasked = motionEvent.getActionMasked();
+//        if (actionMasked != MotionEvent.ACTION_DOWN) {
+//            return false;
+//        }
+//        if (mManualFocusEngaged) {
+//            Log.d(TAG, "Manual focus already engaged");
+//            return true;
+//        }
+//
+//        final Rect sensorArraySize = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+//        int iii = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+//        //TODO: here I just flip x,y, but this needs to correspond with the sensor orientation (via SENSOR_ORIENTATION)
+//        final float viewX = view.getX();
+//        final float viewY = view.getY();
+//        Log.d(TAG, "X => " + motionEvent.getX());
+//        Log.d(TAG, "RAW => " + motionEvent.getRawX());
+//        Log.d(TAG, "pre => " + motionEvent.getXPrecision());
+//        final float viewWidth = (float) view.getWidth();
+//        final float viewHeight = (float) view.getHeight();
+//        Log.d(TAG, "Touch touch (" + iii + ") => x: " + (motionEvent.getX() / viewWidth * 100) + ", y " + (motionEvent.getY() / viewHeight * 100));
+////        Log.d(TAG, iii+" => ((" + viewX + " - "+motionEvent.getX()+" / "+viewWidth+") * (float) "+sensorArraySize.height());
+////        Log.d(TAG, iii+" => ((" + viewY + " - "+motionEvent.getY()+" / "+viewHeight+") * (float) "+sensorArraySize.width());
+//        final int y = (int) ((motionEvent.getRawX() / viewWidth) * (float) sensorArraySize.height());
+//        final int x = (int) ((motionEvent.getRawY() / viewHeight) * (float) sensorArraySize.width());
+//        final int halfTouchWidth = 50; //(int)motionEvent.getTouchMajor(); //TODO: this doesn't represent actual touch size in pixel. Values range in [3, 10]...
+//        final int halfTouchHeight = 50; //(int)motionEvent.getTouchMinor();
+//        MeteringRectangle focusAreaTouch = new MeteringRectangle(Math.max(x - halfTouchWidth, 0),
+//                Math.max(y - halfTouchHeight, 0),
+//                halfTouchWidth * 2,
+//                halfTouchHeight * 2,
+//                MeteringRectangle.METERING_WEIGHT_MAX - 1);
+//
+//        CameraCaptureSession.CaptureCallback captureCallbackHandler = new CameraCaptureSession.CaptureCallback() {
+//            @Override
+//            public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+//                super.onCaptureCompleted(session, request, result);
+//                mManualFocusEngaged = false;
+//
+//                if (request.getTag() == "FOCUS_TAG") {
+//                    //the focus trigger is complete - resume repeating (preview surface will get frames), clear AF trigger
+//                    mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, null);
+//                    try {
+//                        mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), null, null);
+//                    } catch (CameraAccessException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            }
+//
+//            @Override
+//            public void onCaptureFailed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureFailure failure) {
+//                super.onCaptureFailed(session, request, failure);
+//                Log.e(TAG, "Manual AF failure: " + failure);
+//                mManualFocusEngaged = false;
+//            }
+//        };
+//
+//        //first stop the existing repeating request
+//        try {
+//            mCaptureSession.stopRepeating();
+//        } catch (CameraAccessException e) {
+//            e.printStackTrace();
+//        }
+//
+//        //cancel any existing AF trigger (repeated touches, etc.)
+//        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
+//        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
+//        try {
+//            mCaptureSession.capture(mPreviewRequestBuilder.build(), captureCallbackHandler, mBackgroundHandler);
+//        } catch (CameraAccessException e) {
+//            e.printStackTrace();
+//        }
+//
+//        //Now add a new AF trigger with focus region
+//        if (isMeteringAreaAFSupported()) {
+//            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{focusAreaTouch});
+//        }
+//        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+//        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
+//        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
+//        mPreviewRequestBuilder.setTag("FOCUS_TAG"); //we'll capture this later for resuming the preview
+//
+//        //then we ask for a single request (not repeating!)
+//        try {
+//            mCaptureSession.capture(mPreviewRequestBuilder.build(), captureCallbackHandler, mBackgroundHandler);
+//        } catch (CameraAccessException e) {
+//            e.printStackTrace();
+//        }
+//        mManualFocusEngaged = true;
 
         return true;
     }

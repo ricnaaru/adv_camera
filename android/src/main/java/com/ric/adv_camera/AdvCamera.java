@@ -25,6 +25,7 @@ import android.media.ImageReader;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
@@ -124,6 +125,20 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             } else {
                 createCameraPreview();
             }
+            int str = Settings.System.getInt(context.getContentResolver(),
+                    Settings.System.ACCELEROMETER_ROTATION, 0);
+
+            if (str == 1) {
+//                captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
+                textureView.setRotation(mPhotoAngle);
+//                setr(mPhotoAngle);
+//                            createCameraPreview();
+//                            configureR();
+            } else {
+
+                textureView.setRotation(0);
+//                setr(0);
+            }
             configureTransform(width, height);
         }
 
@@ -144,6 +159,45 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         public void onSurfaceTextureUpdated(SurfaceTexture surface) {
         }
     };
+
+    public void setr(int r) {
+//        if (cameraDevice== null) return;
+//        try {
+//            final CaptureRequest.Builder captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+//            SurfaceTexture texture = textureView.getSurfaceTexture();
+//            Log.d(TAG, "1");
+//            assert texture != null;
+//            Log.d(TAG, "texture != null => " + (texture != null));
+//            Log.d(TAG, "createCameraPreview => " + imageDimension.getWidth() + ", " + imageDimension.getHeight());
+//            texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
+//            Surface surface = new Surface(texture);
+//            captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+//            // Orientation
+//            int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+////            captureBuilder.set(CaptureRequest., ORIENTATIONS.get(rotation));
+//            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, r);
+//            cameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
+//                @Override
+//                public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
+//                    //The camera is already closed
+//                    if (null == cameraDevice) {
+//                        return;
+//                    }
+//                    // When the session is ready, we start displaying the preview.
+//                    cameraCaptureSessions = cameraCaptureSession;
+////                    configureFocus();
+////                    updatePreview();
+//                }
+//
+//                @Override
+//                public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
+//                    Toast.makeText(activity, "Configuration change", Toast.LENGTH_SHORT).show();
+//                }
+//            }, null);
+//        } catch (CameraAccessException e) {
+//            e.printStackTrace();
+//        }
+    }
 
     AdvCamera(
             int id,
@@ -287,13 +341,19 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                     if (iOrientation != iNewOrientation) {
                         iOrientation = iNewOrientation;
 
-                        Log.d(TAG, "mPhotoAngle => " + mPhotoAngle + ", " + normalize(iAngle) + ", " + textureView.getWidth() + ", " + textureView.getHeight());
+                        Log.d(TAG, "[" + textureView.getRotation() + "] mPhotoAngle => " + mPhotoAngle + ", " + normalize(iAngle) + ", " + textureView.getWidth() + ", " + textureView.getHeight());
 
                         int newAngle = normalize(iAngle);
+                        int str = Settings.System.getInt(context.getContentResolver(),
+                                Settings.System.ACCELEROMETER_ROTATION, 0);
 
-                        if(newAngle == 90 || newAngle == 270)
-                            createCameraPreview();
+                        if (str == 1) {
+                            if (newAngle != 180)
+//                                setr(newAngle);
+                            textureView.setRotation(newAngle);
+//                            createCameraPreview();
 //                            configureR();
+                        }
                     }
                     mPhotoAngle = normalize(iAngle);
                 }
@@ -498,6 +558,8 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     }
 
     protected void stopBackgroundThread() {
+        if (mBackgroundThread == null) return;
+
         mBackgroundThread.quitSafely();
         try {
             mBackgroundThread.join();
@@ -533,7 +595,9 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
             Surface surface = new Surface(texture);
             captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+
             captureRequestBuilder.addTarget(surface);
+//            captureRequestBuilder.set(CaptureRequest.JPEG_ORIENTATION, mPhotoAngle);
             cameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
@@ -585,13 +649,14 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                     (float) viewHeight / imageDimension.getHeight(),
                     (float) viewWidth / imageDimension.getWidth());
             matrix.postScale(scale, scale, centerX, centerY);
-            matrix.postRotate(90 * (rotation - 2), centerX, centerY);
+//            matrix.postRotate(90 * (rotation - 2), centerX, centerY);
         } else if (Surface.ROTATION_180 == rotation) {
             Log.d(TAG, "Surface.ROTATION_180");
-            matrix.postRotate(180, centerX, centerY);
+//            matrix.postRotate(180, centerX, centerY);
         }
         textureView.setTransform(matrix);
     }
+
     private void configureR() {
 //        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
         Matrix matrix = new Matrix();
@@ -605,7 +670,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 //            Log.d(TAG, "Surface.ROTATION_90 || Surface.ROTATION_270 " + rotation);
 //            bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY());
 //            matrix.setRectToRect(viewRect, viewRect, Matrix.ScaleToFit.FILL);
-            matrix.postRotate(90, centerX, centerY);
+//            matrix.postRotate(90, centerX, centerY);
 //        } else if (Surface.ROTATION_180 == rotation) {
 //            Log.d(TAG, "Surface.ROTATION_180");
 //            matrix.postRotate(180, centerX, centerY);
@@ -995,7 +1060,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
             // Orientation
             int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
-            captureBuilder.set(CaptureRequest., ORIENTATIONS.get(rotation));
+//            captureBuilder.set(CaptureRequest., ORIENTATIONS.get(rotation));
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
             final File file = new File(folder.getAbsolutePath(), fileNamePrefix + "_" + dateFormat.format(currentTime) + ".jpg");
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
