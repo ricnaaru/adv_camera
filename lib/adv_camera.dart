@@ -176,9 +176,13 @@ class _AdvCameraState extends State<AdvCamera> {
           case CameraPreviewRatio.r16_9:
             selectedPreviewRatio = 9.0 / 16.0;
             if (constraintRatio >= selectedPreviewRatio) {
+//              widthTemp = greater * 9.0 / 16.0;
+//              heightTemp = greater;
               widthTemp = lesser;
               heightTemp = lesser * 16.0 / 9.0;
             } else {
+//              heightTemp = lesser;
+//              widthTemp = lesser * 16.0 / 9.0;
               heightTemp = greater;
               widthTemp = greater * 9.0 / 16.0;
             }
@@ -186,9 +190,13 @@ class _AdvCameraState extends State<AdvCamera> {
           case CameraPreviewRatio.r11_9:
             selectedPreviewRatio = 9.0 / 11.0;
             if (constraintRatio >= selectedPreviewRatio) {
+//              heightTemp = greater;
+//              widthTemp = greater * 9.0 / 11.0;
               widthTemp = lesser;
               heightTemp = lesser * 11.0 / 9.0;
             } else {
+//              widthTemp = lesser;
+//              heightTemp = lesser * 11.0 / 9.0;
               heightTemp = greater;
               widthTemp = greater * 9.0 / 11.0;
             }
@@ -196,18 +204,26 @@ class _AdvCameraState extends State<AdvCamera> {
           case CameraPreviewRatio.r4_3:
             selectedPreviewRatio = 3.0 / 4.0;
             if (constraintRatio >= selectedPreviewRatio) {
+//              heightTemp = greater;
+//              widthTemp = greater * 3.0 / 4.0;
               widthTemp = lesser;
               heightTemp = lesser * 4.0 / 3.0;
             } else {
+//              widthTemp = lesser;
+//              heightTemp = lesser * 4.0 / 3.0;
               heightTemp = greater;
               widthTemp = greater * 3.0 / 4.0;
             }
             break;
           case CameraPreviewRatio.r1:
             if (constraintRatio >= 1.0) {
+//              heightTemp = greater;
+//              widthTemp = greater;
               widthTemp = lesser;
               heightTemp = lesser;
             } else {
+//              widthTemp = lesser;
+//              heightTemp = lesser;
               heightTemp = greater;
               widthTemp = greater;
             }
@@ -226,11 +242,15 @@ class _AdvCameraState extends State<AdvCamera> {
           width = constraints.maxWidth;
           height = constraints.maxHeight;
         }
+        print("Overflow => $width, $height");
+        print("Constraints => ${constraints.maxHeight}, ${constraints.maxWidth}");
 
         return ClipRect(
           child: OverflowBox(
             maxWidth: width,
+            minWidth: width,
             maxHeight: height,
+            minHeight: height,
             child: camera,
           ),
           clipper: CustomRect(

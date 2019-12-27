@@ -4,8 +4,12 @@ import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
+import android.graphics.Matrix;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -14,15 +18,19 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
+import android.view.MotionEvent;
+import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -96,6 +104,8 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private static final int REQUEST_CAMERA_PERMISSION = 200;
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     Size[] previewSizes;
+    private int BACK_CAMERA = 0;
+    private int FRONT_CAMERA = 0;
 
     static {
         ORIENTATIONS.append(Surface.ROTATION_0, 90);
@@ -109,12 +119,20 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
             //open your camera here
             Log.e(TAG, "onSurfaceTextureAvailable => " + width + ", " + height);
-            openCamera();
+            if (cameraDevice == null) {
+                openCamera();
+            } else {
+                createCameraPreview();
+            }
+            configureTransform(width, height);
         }
 
         @Override
         public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
             // Transform you image captured size according to the surface width and height
+            Log.e(TAG, "onSurfaceTextureSizeChanged => " + width + ", " + height);
+//            openCamera();
+//            configureTransform(width, height);
         }
 
         @Override
@@ -133,7 +151,11 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             PluginRegistry.Registrar registrar, Object args) {
         this.context = context;
         this.activity = (FragmentActivity) registrar.activity();
-
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        activity.getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int height = displayMetrics.heightPixels;
+        int width = displayMetrics.widthPixels;
+        Log.e(TAG, "AdvCamera => " + width + ", " + height);
         if (args instanceof HashMap) {
             Map<String, Object> params = (Map<String, Object>) args;
             Object initialCamera = params.get("initialCamera");
@@ -187,7 +209,6 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             folder.mkdirs();
         }
 
-
         methodChannel =
                 new MethodChannel(registrar.messenger(), "plugins.flutter.io/adv_camera/" + id);
         methodChannel.setMethodCallHandler(this);
@@ -209,6 +230,34 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         };
         textureView = view.findViewById(R.id.imgSurface);
         textureView.setSurfaceTextureListener(textureListener);
+        try {
+            CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+            cameraId = manager.getCameraIdList()[cameraFacing];
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            assert map != null;
+
+            previewSizes = map.getOutputSizes(SurfaceTexture.class);
+            if (imageDimension == null)
+                for (Size size : previewSizes) {
+                    if (asFraction(size.getWidth(), size.getHeight()).equals(previewRatio)) {
+                        imageDimension = size;
+                        break;
+                    }
+                }
+
+            if (imageDimension == null) {
+                imageDimension = previewSizes[0];
+            }
+//            CameraCharacteristics cameraCharacteristics,
+//            CaptureRequest.Builder previewRequestBuilder,
+//            CameraCaptureSession captureSession,
+//            Handler backgroundHandler
+//            textureView.setOnTouchListener(new CameraFocusOnTouchHandler(characteristics, captureRequestBuilder, cameraCaptureSessions, mBackgroundHandler));
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+
 //
         registrar.addRequestPermissionsResultListener(this);
         if (allPermissionsGranted()) {
@@ -222,6 +271,164 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 //        } catch (CameraInfoUnavailableException e) {
 //            e.printStackTrace();
 //        }
+
+        identifyOrientationEvents();
+    }
+
+    private void identifyOrientationEvents() {
+        OrientationEventListener myOrientationEventListener = new OrientationEventListener(context, SensorManager.SENSOR_DELAY_NORMAL) {
+            @Override
+            public void onOrientationChanged(int iAngle) {
+
+                final int iLookup[] = {0, 0, 0, 90, 90, 90, 90, 90, 90, 180, 180, 180, 180, 180, 180, 270, 270, 270, 270, 270, 270, 0, 0, 0}; // 15-degree increments
+                if (iAngle != ORIENTATION_UNKNOWN) {
+
+                    int iNewOrientation = iLookup[iAngle / 15];
+                    if (iOrientation != iNewOrientation) {
+                        iOrientation = iNewOrientation;
+
+                        Log.d(TAG, "mPhotoAngle => " + mPhotoAngle + ", " + normalize(iAngle) + ", " + textureView.getWidth() + ", " + textureView.getHeight());
+
+                        int newAngle = normalize(iAngle);
+
+                        if(newAngle == 90 || newAngle == 270)
+                            createCameraPreview();
+//                            configureR();
+                    }
+                    mPhotoAngle = normalize(iAngle);
+                }
+            }
+        };
+
+        if (myOrientationEventListener.canDetectOrientation()) {
+            myOrientationEventListener.enable();
+        }
+    }
+
+    private int normalize(int degrees) {
+        if (degrees > 315 || degrees <= 45) {
+            return 0;
+        }
+
+        if (degrees > 45 && degrees <= 135) {
+            return 90;
+        }
+
+        if (degrees > 135 && degrees <= 225) {
+            return 180;
+        }
+
+        if (degrees > 225 && degrees <= 315) {
+            return 270;
+        }
+
+        throw new RuntimeException("Error....");
+    }
+
+    public void handleFocus(MotionEvent event) {
+        int pointerId = event.getPointerId(0);
+        int pointerIndex = event.findPointerIndex(pointerId);
+        // Get the pointer's current position
+        float x = event.getX(pointerIndex);
+        float y = event.getY(pointerIndex);
+
+        Rect touchRect = new Rect(
+                (int) (x - 100),
+                (int) (y - 100),
+                (int) (x + 100),
+                (int) (y + 100));
+
+
+        if (cameraId == null) return;
+        CameraManager cm = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
+        CameraCharacteristics cc = null;
+        try {
+            cc = cm.getCameraCharacteristics(cameraId);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+
+        if (touchRect.top < 0) touchRect.top = 0;
+        if (touchRect.bottom < 0) touchRect.bottom = 0;
+        if (touchRect.left < 0) touchRect.left = 0;
+        if (touchRect.right < 0) touchRect.right = 0;
+
+        Log.d(TAG, "touchRect => " + touchRect);
+
+        MeteringRectangle focusArea = new MeteringRectangle(touchRect, MeteringRectangle.METERING_WEIGHT_DONT_CARE);
+        captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
+        try {
+            cameraCaptureSessions.capture(captureRequestBuilder.build(), null,
+                    mBackgroundHandler);
+            // After this, the camera will go back to the normal state of preview.
+//            mState = STATE_PREVIEW;
+        } catch (CameraAccessException e) {
+            // log
+        }
+
+        /* if (isMeteringAreaAESupported(cc)) {
+         *//*mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_REGIONS,
+                new MeteringRectangle[]{focusArea});*//*
+    }
+    if (isMeteringAreaAFSupported(cc)) {
+        *//*mPreviewRequestBuilder
+                .set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{focusArea});
+        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
+                CaptureRequest.CONTROL_AF_MODE_AUTO);*//*
+    }*/
+        captureRequestBuilder.set(CaptureRequest.CONTROL_AE_REGIONS,
+                new MeteringRectangle[]{focusArea});
+        captureRequestBuilder
+                .set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{focusArea});
+        captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
+                CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+        captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+                CameraMetadata.CONTROL_AF_TRIGGER_START);
+        captureRequestBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+                CameraMetadata.CONTROL_AE_PRECAPTURE_TRIGGER_START);
+        try {
+            cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
+            /* mManualFocusEngaged = true;*/
+        } catch (CameraAccessException e) {
+            // error handling
+        }
+    }
+//    CameraCaptureSession.CaptureCallback captureCallbackHandler = new CameraCaptureSession.CaptureCallback() {
+//        @Override
+//        public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
+//            super.onCaptureCompleted(session, request, result);
+//            mManualFocusEngaged = false;
+//
+//            if (request.getTag() == "FOCUS_TAG") {
+//                //the focus trigger is complete -
+//                //resume repeating (preview surface will get frames), clear AF trigger
+//                captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, null);
+//                try {
+//                    session.setRepeatingRequest(captureRequestBuilder.build(), null, null);
+//                } catch (CameraAccessException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+//
+//        @Override
+//        public void onCaptureFailed(CameraCaptureSession session, CaptureRequest request, CaptureFailure failure) {
+//            super.onCaptureFailed(session, request, failure);
+//            Log.e(TAG, "Manual AF failure: " + failure);
+//            mManualFocusEngaged = false;
+//        }
+//    };
+
+    private void configureFocus() {
+
+        try {
+            CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+            cameraId = manager.getCameraIdList()[cameraFacing];
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+            textureView.setOnTouchListener(new CameraFocusOnTouchHandler(characteristics, captureRequestBuilder, cameraCaptureSessions, mBackgroundHandler));
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
     }
 
     private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
@@ -265,22 +472,18 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     }
 
     private void openCamera() {
+        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
         CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
-        Log.e(TAG, "is camera open");
+        Log.e(TAG, "is camera open with rotataion " + rotation);
         try {
-            cameraId = manager.getCameraIdList()[0];
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            assert map != null;
-
-            previewSizes = map.getOutputSizes(SurfaceTexture.class);
-            imageDimension = previewSizes[3];
+            cameraId = manager.getCameraIdList()[cameraFacing];
 
             // Add permission for camera and let user grant the permission
             if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
                 return;
             }
+
             manager.openCamera(cameraId, stateCallback, null);
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -318,12 +521,15 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     }
 
     protected void createCameraPreview() {
+        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+        Log.e(TAG, "createCameraPreview with rotataion " + rotation);
         try {
             Log.d(TAG, "start");
             SurfaceTexture texture = textureView.getSurfaceTexture();
             Log.d(TAG, "1");
             assert texture != null;
             Log.d(TAG, "texture != null => " + (texture != null));
+            Log.d(TAG, "createCameraPreview => " + imageDimension.getWidth() + ", " + imageDimension.getHeight());
             texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
             Surface surface = new Surface(texture);
             captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
@@ -337,6 +543,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                     }
                     // When the session is ready, we start displaying the preview.
                     cameraCaptureSessions = cameraCaptureSession;
+                    configureFocus();
                     updatePreview();
                 }
 
@@ -349,6 +556,61 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Configures the necessary {@link android.graphics.Matrix} transformation to `mTextureView`.
+     * This method should be called after the camera preview size is determined in
+     * setUpCameraOutputs and also the size of `mTextureView` is fixed.
+     *
+     * @param viewWidth  The width of `mTextureView`
+     * @param viewHeight The height of `mTextureView`
+     */
+    private void configureTransform(int viewWidth, int viewHeight) {
+        if (null == textureView || null == imageDimension || null == activity) {
+            return;
+        }
+        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+        Matrix matrix = new Matrix();
+        RectF viewRect = new RectF(0, 0, viewWidth, viewHeight);
+        RectF bufferRect = new RectF(0, 0, imageDimension.getHeight(), imageDimension.getWidth());
+        float centerX = viewRect.centerX();
+        float centerY = viewRect.centerY();
+        Log.d(TAG, "configureTransform => " + viewWidth + ", " + viewHeight);
+        if (Surface.ROTATION_90 == rotation || Surface.ROTATION_270 == rotation) {
+            Log.d(TAG, "Surface.ROTATION_90 || Surface.ROTATION_270 " + rotation);
+            bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY());
+            matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL);
+            float scale = Math.max(
+                    (float) viewHeight / imageDimension.getHeight(),
+                    (float) viewWidth / imageDimension.getWidth());
+            matrix.postScale(scale, scale, centerX, centerY);
+            matrix.postRotate(90 * (rotation - 2), centerX, centerY);
+        } else if (Surface.ROTATION_180 == rotation) {
+            Log.d(TAG, "Surface.ROTATION_180");
+            matrix.postRotate(180, centerX, centerY);
+        }
+        textureView.setTransform(matrix);
+    }
+    private void configureR() {
+//        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+        Matrix matrix = new Matrix();
+        Log.d(TAG, "viewRect => " + textureView.getWidth() + ", " + textureView.getHeight());
+
+        RectF viewRect = new RectF(0, 0, textureView.getWidth(), textureView.getHeight());
+        RectF bufferRect = new RectF(0, 0, imageDimension.getHeight(), imageDimension.getWidth());
+        float centerX = viewRect.centerX();
+        float centerY = viewRect.centerY();
+//        if (Surface.ROTATION_90 == rotation || Surface.ROTATION_270 == rotation) {
+//            Log.d(TAG, "Surface.ROTATION_90 || Surface.ROTATION_270 " + rotation);
+//            bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY());
+//            matrix.setRectToRect(viewRect, viewRect, Matrix.ScaleToFit.FILL);
+            matrix.postRotate(90, centerX, centerY);
+//        } else if (Surface.ROTATION_180 == rotation) {
+//            Log.d(TAG, "Surface.ROTATION_180");
+//            matrix.postRotate(180, centerX, centerY);
+//        }
+        textureView.setTransform(matrix);
     }
 
 //    private void startCamera() {
@@ -480,11 +742,12 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 result.success(false);
                 return;
             }
-
+            Log.d(TAG, "imageDimension => " + imageDimension);
             cameraDevice.close();
             cameraDevice = null;
             cameraId = null;
-            openCamera();
+//            createCameraPreview();
+//            openCamera();
 //            CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
 //
 //            // Add permission for camera and let user grant the permission
@@ -732,6 +995,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
             // Orientation
             int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+            captureBuilder.set(CaptureRequest., ORIENTATIONS.get(rotation));
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
             final File file = new File(folder.getAbsolutePath(), fileNamePrefix + "_" + dateFormat.format(currentTime) + ".jpg");
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
@@ -841,4 +1105,67 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
         return true;
     }
+
+//    private CameraCaptureSession.CaptureCallback mSessionCaptureCallback = new CameraCaptureSession.CaptureCallback() {
+//
+//        @Override
+//        public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
+//            mSession = session;
+//            if (!PreferenceHelper.getCameraFormat(getActivity()).equals("DNG")) {
+//                checkState(result);
+//            }
+//
+//        }
+//
+//        @Override
+//        public void onCaptureProgressed(CameraCaptureSession session, CaptureRequest request, CaptureResult partialResult) {
+//            mSession = session;
+//            if (!PreferenceHelper.getCameraFormat(getActivity()).equals("DNG")) {
+//                checkState(partialResult);
+//            }
+//        }
+//
+//        private void checkState(CaptureResult result) {
+////            mFrameBitmap = mPreviewView.getBitmap();
+////            mMainHandler.sendEmptyMessage(1);
+//            switch (mState) {
+//                case STATE_PREVIEW:
+//                    // NOTHING
+//                    break;
+//                case STATE_WAITING_CAPTURE:
+//                    int afState = result.get(CaptureResult.CONTROL_AF_STATE);
+//                    Log.i("checkState", "afState--->" + afState);
+//                    if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState || CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState
+//                            || CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED == afState || CaptureResult.CONTROL_AF_STATE_PASSIVE_UNFOCUSED == afState) {
+//                        Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+//                        Log.i("checkState", "进来了一层,aeState--->" + aeState);
+//                        if (aeState == null || aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
+//                            Log.i("checkState", "进来了第二层");
+//                            mState = STATE_TRY_DO_CAPTURE;
+//                            doStillCapture();
+//                        } else {
+//                            mState = STATE_TRY_CAPTURE_AGAIN;
+//                            tryCaptureAgain();
+//                        }
+//                    }
+//                    break;
+//                case STATE_TRY_CAPTURE_AGAIN:
+//                    Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+//                    if (aeState == null ||
+//                            aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
+//                            aeState == CaptureRequest.CONTROL_AE_STATE_FLASH_REQUIRED) {
+//                        mState = STATE_TRY_DO_CAPTURE;
+//                    }
+//                    break;
+//                case STATE_TRY_DO_CAPTURE:
+//                    aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+//                    if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
+//                        mState = STATE_TRY_DO_CAPTURE;
+//                        doStillCapture();
+//                    }
+//                    break;
+//            }
+//        }
+//
+//    };
 }
