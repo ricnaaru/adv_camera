@@ -7,6 +7,7 @@ import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
@@ -102,49 +103,102 @@ public class CameraFocusOnTouchHandler implements View.OnTouchListener {
         return 270;
     }
 
+    int sisa = 462;
+    public float finger_spacing = 0;
+    public double zoom_level = 1;
+
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
+
+        if (motionEvent.getPointerCount() > 1) {
+            return zoom(view,motionEvent);
+        } else{
+            return focus(view, motionEvent);
+        }
+    }
+
+    public boolean zoom(View v, MotionEvent event) {
+        float maxzoom = (mCameraCharacteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM))*10;
+
+        Rect m = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+        float current_finger_spacing;
+
+        if (event.getPointerCount() > 1) {
+            // Multi touch logic
+            current_finger_spacing = getFingerSpacing(event);
+            Log.d(TAG, "current_finger_spacing => " + current_finger_spacing);
+            Log.d(TAG, "maxzoom => " + maxzoom);
+            Log.d(TAG, "m => " + m.width() + ", " + m.height());
+            if(finger_spacing != 0){
+                if(current_finger_spacing > finger_spacing && maxzoom > zoom_level){
+                    zoom_level+= 0.5;
+                } else if (current_finger_spacing < finger_spacing && zoom_level > 1){
+                    zoom_level-= 0.5;
+                }
+                Log.d(TAG, "zoom_level => " + zoom_level);
+                int minW = (int) (m.width() / maxzoom);
+                int minH = (int) (m.height() / maxzoom);
+                int difW = m.width() - minW;
+                int difH = m.height() - minH;
+                int cropW = difW /100 *(int)zoom_level;
+                int cropH = difH /100 *(int)zoom_level;
+                Log.d(TAG, "cropW => " + cropW);
+                cropW -= cropW & 3;
+                cropH -= cropH & 3;
+                Log.d(TAG, "after cropW => " + cropW);
+                Rect zoom = new Rect(cropW, cropH, m.width() - cropW, m.height() - cropH);
+                mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
+            }
+            finger_spacing = current_finger_spacing;
+        }
+
+        try {
+            mCaptureSession
+                    .setRepeatingRequest(mPreviewRequestBuilder.build(), null, null);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+        return true;
+    }
+
+    private boolean focus(View view, MotionEvent motionEvent) {
+
         int allowControl = mCameraCharacteristics.get(CameraCharacteristics.CONTROL_MAX_REGIONS_AF);
 
         if (allowControl == 0) return false;
         final Rect sensorArraySize2 = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
 
-        int pointerId = motionEvent.getPointerId(0);
-        int pointerIndex = motionEvent.findPointerIndex(pointerId);
-        int sensorWidth2 = sensorArraySize2.width();
-        int sensorHeight2 = sensorArraySize2.height();
+        float maxzoom = (mCameraCharacteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM))*10;
 
-        final float viewWidth2 = (float) view.getWidth();
-        final float viewHeight2 = (float) view.getHeight();
-        final int y2 = (int) ((motionEvent.getX() / viewWidth2) * (float) sensorHeight2);
-        final int x2 = (int) ((motionEvent.getY() / viewHeight2) * (float) sensorWidth2);
-//        float screenX = motionEvent.getX();
-//        float screenY = motionEvent.getY();
-//        float viewX = screenX - view.getLeft();
-//        float viewY = screenY - view.getTop();
 
-        Rect rectf = new Rect();
+        final float viewWidth2 = (float) view.getWidth() - 0;
+        final float viewHeight2 = (float) view.getHeight() - 462;
 
-//For coordinates location relative to the parent
-//        anyView.getLocalVisibleRect(rectf);
-
-//For coordinates location relative to the screen/display
-        view.getGlobalVisibleRect(rectf);
-        int[] location = new int[2];
-        view.getLocationInWindow(location);
         float screenX = motionEvent.getRawX();
         float screenY = motionEvent.getRawY();
 
-        float viewX = screenX - rectf.left;
-        float viewY = screenY - rectf.top;
-//        viewX = motionEvent.getX(pointerIndex);
-//        viewY = motionEvent.getY(pointerIndex);
-        Log.d(TAG, "screen: " + rectf.left + " x " + rectf.top);
-        Log.d(TAG, "sensor: " + sensorWidth2 + " x " + sensorHeight2);
-        Log.d(TAG, "motionEvent: " + viewX + " x " + viewY + ", " + mPhotoAngle);
-        Log.d(TAG, "view ize: " + viewWidth2 + " x " + viewHeight2);
-        Log.d(TAG, "percentage: " + ( viewX / viewWidth2 * 100) + " x " +  (viewY / viewHeight2 * 100));
+        float viewX = screenX - 0;
+        float viewY = screenY - 231;
+
+        final float t = viewY;
+        final float r = viewWidth2 - viewX;
+
+//        final float lp = b / viewHeight2;
+//        final float tp = l / viewWidth2;
+//        final float rp = t / viewHeight2;
+//        final float bp = r / viewWidth2;
+
+        final float lp = t / viewHeight2;
+        final float tp = r / viewWidth2;
+
+
+//        ltrb : max, max, 0, 0
+//        ltrb : 0, max, max, 0
+
+//        l => t, t => r, r => b, b => l
+
+
 //
 //
 //        /// kiri y = viewWidth - x; x = y
@@ -176,19 +230,18 @@ public class CameraFocusOnTouchHandler implements View.OnTouchListener {
             return true;
         }
 
-        final Rect sensorArraySize = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
-        //TODO: here I just flip x,y, but this needs to correspond with the sensor orientation (via SENSOR_ORIENTATION)
-        final float viewWidth = (float) view.getWidth();
-        final float viewHeight = (float) view.getHeight();
-
         // 0
 //        final int y = (int) ((motionEvent.getX() / viewWidth) * (float) sensorArraySize.height());
 //        final int x = (int) ((motionEvent.getY() / viewHeight) * (float) sensorArraySize.width());
 
-        final int x = (int) ((motionEvent.getX() / viewWidth) * (float) sensorArraySize.width());
-        final int y = (int) ((motionEvent.getY() / viewHeight) * (float) sensorArraySize.height());
+        final int x = (int) (lp * (float) sensorArraySize2.width());
+        final int y = (int) (tp * (float) sensorArraySize2.height());
         final int halfTouchWidth = 50; //(int)motionEvent.getTouchMajor(); //TODO: this doesn't represent actual touch size in pixel. Values range in [3, 10]...
         final int halfTouchHeight = 50; //(int)motionEvent.getTouchMinor();
+
+//        final int x = (int) (lp * viewWidth2);
+//        final int y = (int) (tp * viewHeight2);
+
         MeteringRectangle focusAreaTouch = new MeteringRectangle(Math.max(x - halfTouchWidth, 0),
                 Math.max(y - halfTouchHeight, 0),
                 halfTouchWidth * 2,
@@ -263,6 +316,15 @@ public class CameraFocusOnTouchHandler implements View.OnTouchListener {
         } else {
             return false;
         }
+    }
+
+
+    //Determine the space between the first two fingers
+    @SuppressWarnings("deprecation")
+    private float getFingerSpacing(MotionEvent event) {
+        float x = event.getX(0) - event.getX(1);
+        float y = event.getY(0) - event.getY(1);
+        return ((float) Math.sqrt(x * x + y * y));
     }
 
 }

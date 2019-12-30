@@ -42,13 +42,15 @@ class AdvCamera extends StatefulWidget {
       CameraType initialCameraType,
       CameraPreviewRatio cameraPreviewRatio,
       CameraSessionPreset cameraSessionPreset,
-        FlashType flashType,
-        bool bestPictureSize,
+      FlashType flashType,
+      bool bestPictureSize,
       this.onCameraCreated,
       this.onImageCaptured})
       : this.initialCameraType = initialCameraType ?? CameraType.rear,
-        this.cameraPreviewRatio = cameraPreviewRatio ?? CameraPreviewRatio.r16_9,
-        this.cameraSessionPreset = cameraSessionPreset ?? CameraSessionPreset.photo,
+        this.cameraPreviewRatio =
+            cameraPreviewRatio ?? CameraPreviewRatio.r16_9,
+        this.cameraSessionPreset =
+            cameraSessionPreset ?? CameraSessionPreset.photo,
         this.flashType = flashType ?? FlashType.auto,
         this.bestPictureSize = bestPictureSize ?? true,
         super(key: key);
@@ -123,12 +125,14 @@ class _AdvCameraState extends State<AdvCamera> {
     }
 
     final Map<String, dynamic> creationParams = <String, dynamic>{
-      "initialCameraType": widget.initialCameraType == CameraType.rear ? "rear" : "front",
+      "initialCameraType":
+          widget.initialCameraType == CameraType.rear ? "rear" : "front",
       "previewRatio": previewRatio,
       "sessionPreset": sessionPreset,
       "flashType": flashType,
       "fileNamePrefix": "adv_camera",
-      "bestPictureSize": widget.bestPictureSize, //for first run on Android (because on each device the default picture size is vary, for example MI 8 Lite's default is the lowest resolution)
+      "bestPictureSize": widget.bestPictureSize,
+      //for first run on Android (because on each device the default picture size is vary, for example MI 8 Lite's default is the lowest resolution)
     };
 
     Widget camera;
@@ -137,7 +141,9 @@ class _AdvCameraState extends State<AdvCamera> {
       camera = AndroidView(
         viewType: 'plugins.flutter.io/adv_camera',
         onPlatformViewCreated: onPlatformViewCreated,
-        gestureRecognizers: gestureRecognizers,
+        gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>[
+          Factory<OneSequenceGestureRecognizer>(() => EagerGestureRecognizer())
+        ].toSet(),
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
       );
@@ -145,7 +151,9 @@ class _AdvCameraState extends State<AdvCamera> {
       camera = UiKitView(
         viewType: 'plugins.flutter.io/adv_camera',
         onPlatformViewCreated: onPlatformViewCreated,
-        gestureRecognizers: gestureRecognizers,
+        gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>[
+          Factory<OneSequenceGestureRecognizer>(() => EagerGestureRecognizer())
+        ].toSet(),
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
       );
@@ -242,22 +250,80 @@ class _AdvCameraState extends State<AdvCamera> {
           width = constraints.maxWidth;
           height = constraints.maxHeight;
         }
-        print("Overflow => $width, $height");
-        print("Constraints => ${constraints.maxHeight}, ${constraints.maxWidth}");
+        print("Overflow $width, $height");
+        print("Overflow 2 ${constraints.maxWidth}, ${constraints.maxHeight}");
 
-        return ClipRect(
-          child: OverflowBox(
-            maxWidth: width,
-            minWidth: width,
-            maxHeight: height,
-            minHeight: height,
-            child: camera,
-          ),
-          clipper: CustomRect(
-            right: constraints.maxWidth,
-            bottom: constraints.maxHeight,
-          ),
-        );
+        double halfSizeWidth = constraints.maxWidth / 2;
+        double halfRequestedWidth = width / 2;
+        double halfSizeHeight = constraints.maxHeight / 2;
+        double halfRequestedHeight = height / 2;
+        double left = (halfSizeWidth - halfRequestedWidth);
+        double top = (halfSizeHeight - halfRequestedHeight);
+        print("left top: $left, $top");
+        return Stack(
+            overflow: Overflow.clip,
+            children: [
+              Positioned(
+                left: left,
+                top: top,
+                width: width,
+                height: height,
+                child: OverflowBox(
+                    maxWidth: width,
+                    minWidth: width,
+                    maxHeight: height,
+                    minHeight: height,
+                    child: camera),
+              ),
+//              Positioned(
+//                  left: left,
+//                  top: top,
+//                  width: width,
+//                  height: height,
+//                  child: Align(
+//                    alignment: Alignment.topLeft,
+//                    child: Container(
+//                      width: 100.0,
+//                      height: 176,
+//                      decoration: BoxDecoration(
+//                          color: Colors.green,
+//                          border: Border.all(
+//                            color: Colors.red,
+//                            width: 5.0,
+//                          )),
+//                    ),
+//                  )),
+//              Positioned(
+//                width: width,
+//                height: height,
+//                child: camera,
+//              ),
+//              Positioned(
+//                  left: left,
+//                  top: top,
+//                  width: width,
+//                  height: height,
+//                  child: Center(child: GestureDetector(
+//        onTap: _onTap,
+//        onTapUp: _onTapUp,
+//        child: Container(
+//        width: constraints.maxWidth,
+//        height: constraints.maxHeight,
+//        child: Text("test"),
+////                        color: Colors.green,
+////                        child: Text("asdasd0"),
+//        ))),)
+//              Positioned(
+//                  top: 0.0,
+//                  left: 0.0,
+//                  child: Container(
+//                    constraints: BoxConstraints(maxWidth: 100,
+//                      maxHeight: 189,),
+//                        color: Colors.red,
+//                        child: Text("asdasd0"),
+//                      ))
+            ],
+          );
       },
     );
   }
@@ -288,6 +354,15 @@ class _AdvCameraState extends State<AdvCamera> {
       widget.onImageCaptured(path);
     }
   }
+
+  void _onTapUp(TapUpDetails details) {
+    print(
+        "details => ${details.localPosition} | ${details.globalPosition} | ${MediaQuery.of(context).devicePixelRatio}");
+  }
+
+  void _onTap() {
+    print("i`m tapped!");
+  }
 }
 
 class CustomRect extends CustomClipper<Rect> {
@@ -298,7 +373,15 @@ class CustomRect extends CustomClipper<Rect> {
 
   @override
   Rect getClip(Size size) {
-    Rect rect = Rect.fromLTRB(0.0, 0.0, right, bottom);
+//    double halfSizeWidth = size.width / 2;
+//    double halfRequestedWidth = right / 2;
+//    double halfSizeHeight = size.height / 2;
+//    double halfRequestedHeight = bottom / 2;
+//    double left =
+//        (halfSizeWidth - halfRequestedWidth).clamp(0, double.infinity);
+//    double top =
+//        (halfSizeHeight - halfRequestedHeight).clamp(0, double.infinity);
+    Rect rect = Rect.fromLTRB(0, 0, right, bottom);
     return rect;
   }
 

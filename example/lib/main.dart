@@ -143,17 +143,17 @@ class _MyAppState extends State<MyApp> {
             ),
           ),
           floatingActionButton: Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
-//            FloatingActionButton(
-//                child: Icon(Icons.switch_camera),
-//                onPressed: () {
-//                  cameraController.switchCamera();
-//                }),
-//            Container(height: 16.0),
-//            FloatingActionButton(
-//                child: Icon(Icons.camera),
-//                onPressed: () {
-//                  cameraController.captureImage();
-//                }),
+            FloatingActionButton(
+                child: Icon(Icons.switch_camera),
+                onPressed: () {
+                  cameraController.switchCamera();
+                }),
+            Container(height: 16.0),
+            FloatingActionButton(
+                child: Icon(Icons.camera),
+                onPressed: () {
+                  cameraController.captureImage();
+                }),
           ])),
     );
   }

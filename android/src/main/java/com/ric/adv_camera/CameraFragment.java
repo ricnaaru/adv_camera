@@ -1,5 +1,6 @@
 package com.ric.adv_camera;
 
+import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
@@ -36,7 +37,6 @@ public class CameraFragment extends Fragment {
         } else {
             Log.d("ricric", "initial => Portrait");
         }
-
         return view;
     }
 
