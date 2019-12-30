@@ -37,6 +37,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -284,6 +285,16 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         };
         textureView = view.findViewById(R.id.imgSurface);
         textureView.setSurfaceTextureListener(textureListener);
+        ViewTreeObserver vto=textureView.getViewTreeObserver();
+        vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener(){
+            @Override public void onGlobalLayout(){
+                int [] location = new int[2];
+                textureView.getLocationOnScreen(location);
+
+                Log.d(TAG, "textureView screen: " + location[0] + " x " + location[1]);
+                textureView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+            }
+        });
         try {
             CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
             cameraId = manager.getCameraIdList()[cameraFacing];
@@ -485,7 +496,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
             cameraId = manager.getCameraIdList()[cameraFacing];
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-            textureView.setOnTouchListener(new CameraFocusOnTouchHandler(characteristics, captureRequestBuilder, cameraCaptureSessions, mBackgroundHandler));
+            textureView.setOnTouchListener(new CameraFocusOnTouchHandler(context, characteristics, captureRequestBuilder, cameraCaptureSessions, mBackgroundHandler));
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
