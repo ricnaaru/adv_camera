@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
@@ -16,8 +17,11 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
+import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
@@ -55,6 +59,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
@@ -94,6 +99,43 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private static final String CAMERA_FRONT = "1";
     private static final String CAMERA_BACK = "0";
 
+    /**
+     * The current state of camera state for taking pictures.
+     *
+//     * @see #mCaptureCallback
+     */
+    private int mState = STATE_PREVIEW;
+
+    /**
+     * A {@link Semaphore} to prevent the app from exiting before closing the camera.
+     */
+    private Semaphore mCameraOpenCloseLock = new Semaphore(1);
+
+    /**
+     * Camera state: Showing camera preview.
+     */
+    private static final int STATE_PREVIEW = 0;
+
+    /**
+     * Camera state: Waiting for the focus to be locked.
+     */
+    private static final int STATE_WAITING_LOCK = 1;
+
+    /**
+     * Camera state: Waiting for the exposure to be precapture state.
+     */
+    private static final int STATE_WAITING_PRECAPTURE = 2;
+
+    /**
+     * Camera state: Waiting for the exposure state to be something other than precapture.
+     */
+    private static final int STATE_WAITING_NON_PRECAPTURE = 3;
+
+    /**
+     * Camera state: Picture was taken.
+     */
+    private static final int STATE_PICTURE_TAKEN = 4;
+
     static {
         ORIENTATIONS.append(Surface.ROTATION_0, 90);
         ORIENTATIONS.append(Surface.ROTATION_90, 0);
@@ -104,11 +146,11 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
         @Override
         public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-            if (cameraDevice == null) {
-                openCamera();
-            } else {
-                createCameraPreview();
-            }
+//            if (cameraDevice == null) {
+            openCamera();
+//            } else {
+//                createCameraPreview();
+//            }
         }
 
         @Override
@@ -210,29 +252,6 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         textureView = view.findViewById(R.id.imgSurface);
         textureView.setSurfaceTextureListener(textureListener);
 
-        try {
-            CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
-            cameraId = manager.getCameraIdList()[cameraFacing];
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            assert map != null;
-
-            previewSizes = map.getOutputSizes(SurfaceTexture.class);
-            if (imageDimension == null)
-                for (Size size : previewSizes) {
-                    if (asFraction(size.getWidth(), size.getHeight()).equals(previewRatio)) {
-                        imageDimension = size;
-                        break;
-                    }
-                }
-
-            if (imageDimension == null) {
-                imageDimension = previewSizes[0];
-            }
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-
         registrar.addRequestPermissionsResultListener(this);
         if (!allPermissionsGranted()) {
             ActivityCompat.requestPermissions(activity, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
@@ -285,22 +304,24 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(CameraDevice camera) {
+            // This method is called when the camera is opened. We start camera preview here.
+            mCameraOpenCloseLock.release();
             cameraDevice = camera;
-            if (textureView.isAvailable()) {
-                createCameraPreview();
-            } else {
-                textureView.setSurfaceTextureListener(textureListener);
-            }
+            createCameraPreviewSession();
         }
 
         @Override
         public void onDisconnected(CameraDevice camera) {
-            cameraDevice.close();
+
+            mCameraOpenCloseLock.release();
+            camera.close();
+            cameraDevice = null;
         }
 
         @Override
         public void onError(CameraDevice camera, int error) {
-            cameraDevice.close();
+            mCameraOpenCloseLock.release();
+            camera.close();
             cameraDevice = null;
         }
     };
@@ -314,6 +335,92 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         }
     }
 
+    /**
+     * Creates a new {@link CameraCaptureSession} for camera preview.
+     */
+    private void createCameraPreviewSession() {
+        try {
+            SurfaceTexture texture = textureView.getSurfaceTexture();
+            assert texture != null;
+
+            // We configure the size of default buffer to be the size of camera preview we want.
+            texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
+
+            // This is the output Surface we need to start preview.
+            Surface surface = new Surface(texture);
+
+            // We set up a CaptureRequest.Builder with the output Surface.
+            captureRequestBuilder
+                    = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            captureRequestBuilder.addTarget(surface);
+
+            // Here, we create a CameraCaptureSession for camera preview.
+            cameraDevice.createCaptureSession(Arrays.asList(surface),
+                    new CameraCaptureSession.StateCallback() {
+
+                        @Override
+                        public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
+                            // The camera is already closed
+                            if (null == cameraDevice) {
+                                return;
+                            }
+
+                            Log.d(TAG, "lalala");
+
+                            // When the session is ready, we start displaying the preview.
+                            AdvCamera.this.cameraCaptureSessions = cameraCaptureSession;
+                            try {
+                                // Auto focus should be continuous for camera preview.
+                                captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
+                                        CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+//                                // Flash is automatically enabled when necessary.
+//                                setAutoFlash(mPreviewRequestBuilder);
+
+                                // Finally, we start displaying the camera preview.
+                                cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(),
+                                        null, mBackgroundHandler);
+                            } catch (CameraAccessException e) {
+                                e.printStackTrace();
+                            }
+                            configureFocus();
+                        }
+
+                        @Override
+                        public void onConfigureFailed(
+                                @NonNull CameraCaptureSession cameraCaptureSession) {
+                            Toast.makeText(activity, "Configuration change", Toast.LENGTH_SHORT).show();
+                        }
+                    }, null
+            );
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+//    /**
+//     * Initiate a still image capture.
+//     */
+//    private void stakePicture() {
+//        lockFocus();
+//    }
+
+//    /**
+//     * Lock the focus as the first step for a still image capture.
+//     */
+//    private void lockFocus() {
+//        try {
+//            // This is how to tell the camera to lock focus.
+////            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+////                    CameraMetadata.CONTROL_AF_TRIGGER_START);
+//            // Tell #mCaptureCallback to wait for the lock.
+//            mState = STATE_WAITING_LOCK;
+//            cameraCaptureSessions.capture(captureRequestBuilder.build(), mCaptureCallback,
+//                    mBackgroundHandler);
+//        } catch (CameraAccessException e) {
+//            e.printStackTrace();
+//        }
+//    }
+
     protected void onPause() {
         stopBackgroundThread();
     }
@@ -322,6 +429,23 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
         try {
             cameraId = manager.getCameraIdList()[cameraFacing];
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            assert map != null;
+
+            previewSizes = map.getOutputSizes(SurfaceTexture.class);
+            for (Size size : previewSizes) {
+                if (asFraction(size.getWidth(), size.getHeight()).equals(previewRatio)) {
+                    imageDimension = size;
+                    break;
+                }
+            }
+
+            Log.d(TAG, "previewsize => " + previewSizes);
+
+            if (imageDimension == null) {
+                imageDimension = previewSizes[0];
+            }
 
             if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
@@ -370,11 +494,28 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             SurfaceTexture texture = textureView.getSurfaceTexture();
 
             assert texture != null;
+            Log.e(TAG, "imageDimension: " + imageDimension.getWidth() + ", " + imageDimension.getHeight());
 
             texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
             Surface surface = new Surface(texture);
+
+            MeteringRectangle[] focusArea = null;
+            Rect cropRegion = null;
+
+            if (captureRequestBuilder != null) {
+                focusArea = captureRequestBuilder.get(CaptureRequest.CONTROL_AF_REGIONS);
+                cropRegion = captureRequestBuilder.get(CaptureRequest.SCALER_CROP_REGION);
+            }
+
             captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             captureRequestBuilder.addTarget(surface);
+
+            captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+
+            if (focusArea != null && cropRegion != null) {
+                captureRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, focusArea);
+                captureRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, cropRegion);
+            }
 
             cameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
                 @Override
@@ -405,6 +546,8 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         } else if (methodCall.method.equals("setPreviewRatio")) {
             String previewRatio = "";
 
+            if (cameraFacing == 1) return;
+
             if (methodCall.arguments instanceof HashMap) {
                 Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
                 previewRatio = params.get("previewRatio") == null ? null : params.get("previewRatio").toString();
@@ -428,7 +571,174 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
             result.success(true);
         } else if (methodCall.method.equals("captureImage")) {
-            takePicture();
+            try {
+                // This is how to tell the camera to lock focus.
+//                captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+//                        CameraMetadata.CONTROL_AF_TRIGGER_START);
+                // Tell #mCaptureCallback to wait for the lock.
+                Log.d(TAG, "before trigger 1! " + flashType);
+                if (flashType.equals("off")) {
+//                captureBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+                    captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+                } else if (flashType.equals("on")) {
+                    captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH);
+//                captureBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+//                    } else if (flashType.equals("torch")) {
+//                        captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+                } else if (flashType.equals("auto")) {
+//                captureBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+//                captureBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
+//                captureBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_/OFF);
+                    captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+                    captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_TORCH);
+//                    captureRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_DAYLIGHT);
+                }
+//                        session.capture(captureBuilder.build(), captureListener, null);
+                boolean aeState = captureRequestBuilder.get(CaptureRequest.CONTROL_AE_LOCK);
+                Log.d(TAG, "before trigger! => " + aeState);
+                // This is how to tell the camera to trigger.
+//                captureRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, true);
+//                captureRequestBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT, CaptureRequest.CONTROL_CAPTURE_INTENT_STILL_CAPTURE);
+                Log.d(TAG, "after trigger!");
+                mState = STATE_WAITING_LOCK;
+                final CameraCaptureSession[] ccs = new CameraCaptureSession[1];
+                SurfaceTexture texture = textureView.getSurfaceTexture();
+
+                // This is the output Surface we need to start preview.
+                Surface surface = new Surface(texture);
+                // Here, we create a CameraCaptureSession for camera preview.
+                cameraDevice.createCaptureSession(Arrays.asList(surface),
+                        new CameraCaptureSession.StateCallback() {
+
+                            @Override
+                            public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
+                                // The camera is already closed
+                                if (null == cameraDevice) {
+                                    return;
+                                }
+
+                                Log.d(TAG, "lalala");
+
+                                // When the session is ready, we start displaying the preview.
+                                ccs[0] = cameraCaptureSession;
+
+                                try {
+                                    ccs[0].setRepeatingRequest(captureRequestBuilder.build(),
+                                            new CameraCaptureSession.CaptureCallback() {
+                                                @Override
+                                                public void onCaptureProgressed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureResult partialResult) {
+                                                    super.onCaptureProgressed(session, request, partialResult);
+                                                    Integer aeState = partialResult.get(CaptureResult.CONTROL_AE_STATE);
+    //                                Integer aeState = partialResult.get(CaptureResult.FLASH_MODE);
+                                                    Log.d(TAG, "captureImage onCaptureProgressed CONTROL_AE_STATE aeState =? " + aeState);
+                                                    Log.d(TAG, "captureImage onCaptureProgressed FLASH_MODE aeState =? " + partialResult.get(CaptureResult.FLASH_MODE));
+                                                    Log.d(TAG, "captureImage onCaptureProgressed FLASH_MODE aeState =? " + partialResult.get(CaptureResult.CONTROL_AE_MODE));
+                                                }
+
+                                                @Override
+                                                public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+                                                    super.onCaptureCompleted(session, request, result);
+                                                    Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                                                    Log.d(TAG, "captureImage onCaptureCompleted CONTROL_AE_STATE aeState =? " + aeState);
+                                                    Log.d(TAG, "captureImage onCaptureCompleted FLASH_MODE aeState =? " + result.get(CaptureResult.FLASH_MODE));
+                                                    Log.d(TAG, "captureImage onCaptureCompleted FLASH_MODE aeState =? " + result.get(CaptureResult.CONTROL_AE_MODE));
+    //                                try {
+    //                                    cameraCaptureSessions.stopRepeating();
+    //                                    cameraCaptureSessions.abortCaptures();
+    //                                } catch (CameraAccessException e) {
+    //                                    e.printStackTrace();
+    //                                }
+                                                    if (aeState == null ||
+                                                            aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
+                                                        takePicture();
+                                                    } else {
+                                                        try {
+                                                            // This is how to tell the camera to trigger.
+                                                            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+                                                                    CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
+                                                            // Tell #mCaptureCallback to wait for the precapture sequence to be set.
+                                                            mState = STATE_WAITING_PRECAPTURE;
+
+                                                            Log.d(TAG, "inner else =? " + session.isReprocessable());
+                                                            session.capture(captureRequestBuilder.build(), new CameraCaptureSession.CaptureCallback() {
+                                                                        @Override
+                                                                        public void onCaptureProgressed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureResult partialResult) {
+                                                                            super.onCaptureProgressed(session, request, partialResult);
+                                                                            Integer aeState = partialResult.get(CaptureResult.CONTROL_AE_STATE);
+                                                                            Log.d(TAG, "inner captureImage onCaptureProgressed CONTROL_AE_STATE aeState =? " + aeState);
+    //                                                        if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
+    //                                                            mState = STATE_PICTURE_TAKEN;
+    //                                                            try {
+    //                                                                cameraCaptureSessions.stopRepeating();
+    //                                                                cameraCaptureSessions.abortCaptures();
+    //                                                            } catch (CameraAccessException e) {
+    //                                                                e.printStackTrace();
+    //                                                            }
+    //                                                            takePicture();
+    //                                                        }
+                                                                        }
+
+                                                                        @Override
+                                                                        public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+                                                                            super.onCaptureCompleted(session, request, result);
+                                                                            Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                                                                            Log.d(TAG, "inner captureImage onCaptureCompleted CONTROL_AE_STATE aeState =? " + aeState);
+                                                                            if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
+                                                                                mState = STATE_PICTURE_TAKEN;
+    //                                                            try {
+    //                                                                cameraCaptureSessions.stopRepeating();
+    //                                                                cameraCaptureSessions.abortCaptures();
+    //                                                            } catch (CameraAccessException e) {
+    //                                                                e.printStackTrace();
+    //                                                            }
+                                                                                takePicture();
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    mBackgroundHandler);
+                                                        } catch (CameraAccessException e) {
+                                                            e.printStackTrace();
+                                                        }
+                                                    }
+                                                }
+                                            }, mBackgroundHandler);
+                                } catch (CameraAccessException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+
+                            @Override
+                            public void onConfigureFailed(
+                                    @NonNull CameraCaptureSession cameraCaptureSession) {
+                                Toast.makeText(activity, "Configuration change", Toast.LENGTH_SHORT).show();
+                            }
+                        }, null
+                );
+//                cameraCaptureSessions.capture(captureRequestBuilder.build(), new CameraCaptureSession.CaptureCallback() {
+//                            @Override
+//                            public void onCaptureProgressed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureResult partialResult) {
+//                                super.onCaptureProgressed(session, request, partialResult);
+//                                Integer aeState = partialResult.get(CaptureResult.CONTROL_AE_STATE);
+////                                Integer aeState = partialResult.get(CaptureResult.FLASH_MODE);
+//                                Log.d(TAG, "captureImage onCaptureProgressed CONTROL_AE_STATE aeState =? " + aeState);
+//                                Log.d(TAG, "captureImage onCaptureProgressed FLASH_MODE aeState =? " + partialResult.get(CaptureResult.FLASH_MODE));
+//                                Log.d(TAG, "captureImage onCaptureProgressed FLASH_MODE aeState =? " + partialResult.get(CaptureResult.CONTROL_AE_MODE));
+//                            }
+//
+//                            @Override
+//                            public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+//                                super.onCaptureCompleted(session, request, result);
+//                                Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+//                                Log.d(TAG, "captureImage onCaptureProgressed CONTROL_AE_STATE aeState =? " + aeState);
+//                                Log.d(TAG, "captureImage onCaptureProgressed FLASH_MODE aeState =? " + result.get(CaptureResult.FLASH_MODE));
+//                                Log.d(TAG, "captureImage onCaptureProgressed FLASH_MODE aeState =? " + result.get(CaptureResult.CONTROL_AE_MODE));
+//                                takePicture();
+//                            }
+//                        },
+//                        mBackgroundHandler);
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
             result.success(true);
         } else if (methodCall.method.equals("switchCamera")) {
             if (cameraId.equals(CAMERA_FRONT)) {
@@ -437,6 +747,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 cameraDevice.close();
                 cameraDevice = null;
                 cameraId = null;
+                captureRequestBuilder = null;
 
                 openCamera();
 //                reopenCamera();
@@ -448,6 +759,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 cameraDevice.close();
                 cameraDevice = null;
                 cameraId = null;
+                captureRequestBuilder = null;
 //                Matrix matrix = new Matrix();
 //                matrix.setScale(-1, 1);
 ////                matrix.postTranslate(width, 0);
@@ -533,11 +845,54 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
             result.success(true);
         } else if (methodCall.method.equals("setFlashType")) {
-//            String flashType = "auto";
+            String flashType = "auto";
+
+            if (methodCall.arguments instanceof HashMap) {
+                Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
+                flashType = params.get("flashType") == null ? "auto" : params.get("flashType").toString();
+            }
+//            try {
+            if (isFlashAvailable()) {
+//                    FlashState.AUTO -> {
+//                        previewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
+//                    }
+//                    FlashState.ON -> {
+//                        previewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+//                        previewRequestBuilder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_TORCH)
+//                    }
+//                    FlashState.OFF -> {
+//                        previewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+//                        previewRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
+//                    }
+                Log.d(TAG, "flashType => " + flashType);
+//                    if (flashType.equals("off")) {
+//                        captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+//                        captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+//                    } else if (flashType.equals("on")) {
+//                        captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+//                        captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+////                    } else if (flashType.equals("torch")) {
+////                        captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+//                    } else if (flashType.equals("auto")) {
+//                        captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+//                        captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+//                    }
+            }
+//                cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), new CameraCaptureSession.CaptureCallback() {
+//                    @Override
+//                    public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+//                        super.onCaptureCompleted(session, request, result);
+//                        Log.d(TAG, "onCaptureCompleted");
+//                    }
 //
-//            if (methodCall.arguments instanceof HashMap) {
-//                Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
-//                flashType = params.get("flashType") == null ? "auto" : params.get("flashType").toString();
+//                    @Override
+//                    public void onCaptureFailed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureFailure failure) {
+//                        super.onCaptureFailed(session, request, failure);
+//                        Log.d(TAG, "onCaptureFailed");
+//                    }
+//                }, null);
+//            } catch (CameraAccessException e) {
+//                e.printStackTrace();
 //            }
 //
 //            Camera.Parameters param = camera.getParameters();
@@ -572,8 +927,20 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 //            }
 //            camera.startPreview();
 //
-//            result.success(true);
+            result.success(true);
         }
+    }
+
+    private boolean isFlashAvailable() {
+        final CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+        CameraCharacteristics characteristics = null;
+        try {
+            characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+        Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+        return available == null ? false : available;
     }
 
     private static long gcm(long a, long b) {
@@ -585,12 +952,118 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         return (a / gcm) + ":" + (b / gcm);
     }
 
+//    private void runPrecapture() {
+//        try {
+//            // This is how to tell the camera to trigger.
+//            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+//                    CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
+//            // Tell #mCaptureCallback to wait for the precapture sequence to be set.
+//            mState = STATE_WAITING_PRECAPTURE;
+//            cameraCaptureSessions.capture(captureRequestBuilder.build(), mCaptureCallback,
+//                    mBackgroundHandler);
+//        } catch (CameraAccessException e) {
+//            e.printStackTrace();
+//        }
+//    }
+
+//    private CameraCaptureSession.CaptureCallback mCaptureCallback
+//            = new CameraCaptureSession.CaptureCallback() {
+//
+//        private void process(CaptureResult result) {
+//            switch (mState) {
+//                case STATE_PREVIEW: {
+//                    // We have nothing to do when the camera preview is working normally.
+//                    break;
+//                }
+//                case STATE_WAITING_LOCK: {
+////                    Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
+////                    Log.d(TAG, "afState =? " + afState);
+////                    if (afState == null) {
+////                        takePicture();
+////                    } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
+////                            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
+////                        // CONTROL_AE_STATE can be null on some devices
+////                        Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+////                        if (aeState == null ||
+////                                aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
+////                            mState = STATE_PICTURE_TAKEN;
+////                            takePicture();
+////                        } else {
+////                    runPrecapture();
+////                        }
+////                    }
+//                    break;
+//                }
+//                case STATE_WAITING_PRECAPTURE: {
+//                    // CONTROL_AE_STATE can be null on some devices
+//                    Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+//                    Log.d(TAG, "STATE_WAITING_PRECAPTURE aeState =? " + aeState);
+//                    if (aeState == null ||
+//                            aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
+//                            aeState == CaptureRequest.CONTROL_AE_STATE_FLASH_REQUIRED) {
+//                        mState = STATE_WAITING_NON_PRECAPTURE;
+//                        mState = STATE_PICTURE_TAKEN;
+//                        takePicture();
+//                    }
+//                    break;
+//                }
+//                case STATE_WAITING_NON_PRECAPTURE: {
+//                    // CONTROL_AE_STATE can be null on some devices
+//                    Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+//                    Log.d(TAG, "STATE_WAITING_NON_PRECAPTURE aeState =? " + aeState);
+//                    if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
+//                        mState = STATE_PICTURE_TAKEN;
+//                        takePicture();
+//                    }
+//                    break;
+//                }
+//            }
+//        }
+//
+//        @Override
+//        public void onCaptureProgressed(@NonNull CameraCaptureSession session,
+//                                        @NonNull CaptureRequest request,
+//                                        @NonNull CaptureResult partialResult) {
+//            process(partialResult);
+//        }
+//
+//        @Override
+//        public void onCaptureCompleted(@NonNull CameraCaptureSession session,
+//                                       @NonNull CaptureRequest request,
+//                                       @NonNull TotalCaptureResult result) {
+//            process(result);
+//        }
+//
+//    };
+//
+//    /**
+//     * Unlock the focus. This method should be called when still image capture sequence is
+//     * finished.
+//     */
+//    private void unlockFocus() {
+//        try {
+////            // Reset the auto-focus trigger
+////            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+////                    CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
+//////            setAutoFlash(mPreviewRequestBuilder);
+////            cameraCaptureSessions.capture(captureRequestBuilder.build(), mCaptureCallback,
+////                    mBackgroundHandler);
+//            // After this, the camera will go back to the normal state of preview.
+//            mState = STATE_PREVIEW;
+//            cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), mCaptureCallback,
+//                    mBackgroundHandler);
+//        } catch (CameraAccessException e) {
+//            e.printStackTrace();
+//        }
+//    }
+
     private void takePicture() {
         if (null == cameraDevice) {
             Log.e(TAG, "cameraDevice is null");
             return;
         }
-        CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+
+        final CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
         try {
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
             Size[] jpegSizes = null;
@@ -616,19 +1089,21 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             outputSurfaces.add(reader.getSurface());
             outputSurfaces.add(new Surface(textureView.getSurfaceTexture()));
             final CaptureRequest.Builder captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+            MeteringRectangle[] focusArea = captureRequestBuilder.get(CaptureRequest.CONTROL_AF_REGIONS);
+            Rect cropRegion = captureRequestBuilder.get(CaptureRequest.SCALER_CROP_REGION);
+            Integer aeMode = captureRequestBuilder.get(CaptureRequest.CONTROL_AE_MODE);
+            Integer flashMode = captureRequestBuilder.get(CaptureRequest.FLASH_MODE);
             captureBuilder.addTarget(reader.getSurface());
             captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+            captureBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, focusArea);
+            captureBuilder.set(CaptureRequest.SCALER_CROP_REGION, cropRegion);
+//            captureBuilder.set(CaptureRequest.CONTROL_AE_MODE, aeMode);
+//            captureBuilder.set(CaptureRequest.FLASH_MODE, flashMode);
 
             if (cameraFacing == 0) {
                 captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, mPhotoAngle + 90);
-            } else {
-                int x = manager.getCameraCharacteristics(cameraId).get(
-                        CameraCharacteristics.SENSOR_ORIENTATION);
-
-                Log.d(TAG, "x => " + x);
-                captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, x);
-//                captureBuilder.set(CaptureRequest.JPEG_THUMBNAIL_SIZE,  x);
             }
+
             final File file = new File(folder.getAbsolutePath(), fileNamePrefix + "_" + dateFormat.format(currentTime) + ".jpg");
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
                 @Override
@@ -640,26 +1115,25 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                         byte[] bytes = new byte[buffer.capacity()];
                         buffer.get(bytes);
 
-//                        if (cameraFacing == 0) {
+                        if (cameraFacing == 0) {
                             save(bytes);
-//                        } else {
-//                            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-//                            Matrix matrix = new Matrix();
-//                            matrix.postScale(-1, 1, bitmap.getWidth() / 2f, bitmap.getHeight() / 2f);
-//
-//                            Bitmap bb = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-//                            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-//                            bb.compress(Bitmap.CompressFormat.PNG, 100, stream);
-//                            byte[] byteArray = stream.toByteArray();
-//                            bitmap.recycle();
-//
-//                            bb.recycle();
-//
-//                            save(byteArray);
-//                        }
+                        } else {
+                            Integer x = manager.getCameraCharacteristics(cameraId).get(
+                                    CameraCharacteristics.SENSOR_ORIENTATION);
+                            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                            Matrix matrix = new Matrix();
+                            if (x != null)
+                                matrix.postRotate(x - mPhotoAngle);
+                            matrix.postScale(-1, 1, bitmap.getWidth() / 2f, bitmap.getHeight() / 2f);
+
+                            Bitmap bb = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+                            save(bb);
+                        }
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (CameraAccessException e) {
                         e.printStackTrace();
                     } finally {
                         if (image != null) {
@@ -679,6 +1153,15 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                         }
                     }
                 }
+
+                private void save(Bitmap bitmap) throws IOException {
+                    OutputStream fOut = new FileOutputStream(file);
+
+//                    Bitmap pictureBitmap = getImageBitmap(myurl); // obtaining the Bitmap
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 85, fOut); // saving the Bitmap to a file compressed as a JPEG with 85% compression rate
+                    fOut.flush(); // Not really required
+                    fOut.close(); // do not forget to close the stream
+                }
             };
             reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
             final CameraCaptureSession.CaptureCallback captureListener = new CameraCaptureSession.CaptureCallback() {
@@ -688,20 +1171,217 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                     activity.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(activity, "Saved:" + file, Toast.LENGTH_SHORT).show();
                             Map<String, Object> params = new HashMap<>();
                             params.put("path", file.getAbsolutePath());
                             methodChannel.invokeMethod("onImageCaptured", params);
-                            createCameraPreview();
+//                            createCameraPreview();
+//                            unlockFocus();
+                            cameraCaptureSessions.close();
+                            createCameraPreviewSession();
                         }
                     });
                 }
+//                                    @Override
+//                                    public void onCaptureSequenceCompleted(@NonNull CameraCaptureSession session, int sequenceId, long frameNumber) {
+//                                        super.onCaptureSequenceCompleted(session, sequenceId, frameNumber);
+//                                        Log.d(TAG, "onCaptureSequenceCompleted");
+//                                    }
+//
+//                                    @Override
+//                                    public void onCaptureSequenceAborted(@NonNull CameraCaptureSession session, int sequenceId) {
+//                                        super.onCaptureSequenceAborted(session, sequenceId);
+//                                        Log.d(TAG, "onCaptureSequenceAborted");
+//                                    }
+//
+//                                    @Override
+//                                    public void onCaptureBufferLost(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull Surface target, long frameNumber) {
+//                                        super.onCaptureBufferLost(session, request, target, frameNumber);
+//                                        Log.d(TAG, "onCaptureBufferLost => " + request);
+//                                    }
+//
+//                                    @Override
+//                                    public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
+//                                        super.onCaptureStarted(session, request, timestamp, frameNumber);
+//                                        Log.d(TAG, "onCaptureStarted => " + request);
+//                                    }
+//
+//                                    @Override
+//                                    public void onCaptureFailed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureFailure failure) {
+//                                        super.onCaptureFailed(session, request, failure);
+//                                        Log.d(TAG, "onCaptureFailed => " + request);
+//                                    }
+//
+//                                    @Override
+//                                    public void onCaptureProgressed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureResult partialResult) {
+//                                        super.onCaptureProgressed(session, request, partialResult);
+//                                        Integer aeState = partialResult.get(CaptureResult.CONTROL_AE_STATE);
+//                                        Log.d(TAG, "onCaptureProgressed => " + aeState);
+////                                        session.capture(captureBuilder.build(), captureListener, null);
+//                                    }
+
+//                                    @Override
+//                                    public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+//                                        super.onCaptureCompleted(session, request, result);
+//                                        Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+//                                        Log.d(TAG, "onCaptureCompleted => " + aeState);
+//                                    }
             };
+//            captureBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+//                    CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
+//            try {
+//                cameraCaptureSessions.capture(captureRequestBuilder.build(), new CameraCaptureSession.CaptureCallback() {
+//                            @Override
+//                            public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+//                                super.onCaptureCompleted(session, request, result);
+//                            }
+//                        },
+//                        null);
+//            } catch (CameraAccessException e) {
+//                e.printStackTrace();
+//            }
+
+
             cameraDevice.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(CameraCaptureSession session) {
+                    Log.d(TAG, "onConfigured! " + isFlashAvailable());
                     try {
-                        session.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
+//                        Log.d(TAG, "before trigger 1! " + captureBuilder.get(CaptureRequest.CONTROL_AE_MODE));
+//                        if (flashType.equals("off")) {
+////                captureBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+//                            captureBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+//                        } else if (flashType.equals("on")) {
+//                            captureBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH);
+////                captureBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+////                    } else if (flashType.equals("torch")) {
+////                        captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+//                        } else if (flashType.equals("auto")) {
+////                captureBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+////                captureBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
+////                captureBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_/OFF);
+//                            captureBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+//                            captureBuilder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_SINGLE);
+//                            captureBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_DAYLIGHT);
+//                        }
+////                        session.capture(captureBuilder.build(), captureListener, null);
+//                        boolean aeState = captureBuilder.get(CaptureRequest.CONTROL_AE_LOCK);
+//                        Log.d(TAG, "before trigger! => " + aeState);
+//                        // This is how to tell the camera to trigger.
+//                        captureBuilder.set(CaptureRequest.CONTROL_AE_LOCK, true);
+//                        captureBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+//                                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
+//                        captureBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT, CaptureRequest.CONTROL_CAPTURE_INTENT_STILL_CAPTURE);
+//                        Log.d(TAG, "after trigger!");
+//                        // Tell #mCaptureCallback to wait for the precapture sequence to be set.
+//                        mState = STATE_WAITING_PRECAPTURE;
+
+                        // Finally, we start displaying the camera preview.
+//                        session.setRepeatingRequest(captureBuilder.build(),
+//                                new CameraCaptureSession.CaptureCallback() {
+//                                    @Override
+//                                    public void onCaptureSequenceCompleted(@NonNull CameraCaptureSession session, int sequenceId, long frameNumber) {
+//                                        super.onCaptureSequenceCompleted(session, sequenceId, frameNumber);
+//                                        Log.d(TAG, "1 onCaptureSequenceCompleted");
+//                                    }
+//
+//                                    @Override
+//                                    public void onCaptureSequenceAborted(@NonNull CameraCaptureSession session, int sequenceId) {
+//                                        super.onCaptureSequenceAborted(session, sequenceId);
+//                                        Log.d(TAG, "1 onCaptureSequenceAborted");
+//                                    }
+//
+//                                    @Override
+//                                    public void onCaptureBufferLost(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull Surface target, long frameNumber) {
+//                                        super.onCaptureBufferLost(session, request, target, frameNumber);
+//                                        Log.d(TAG, "1 onCaptureBufferLost => " + request);
+//                                    }
+//
+//                                    @Override
+//                                    public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
+//                                        super.onCaptureStarted(session, request, timestamp, frameNumber);
+//                                        Log.d(TAG, "1 onCaptureStarted => " + request);
+//                                    }
+//
+//                                    @Override
+//                                    public void onCaptureFailed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureFailure failure) {
+//                                        super.onCaptureFailed(session, request, failure);
+//                                        Log.d(TAG, "1 onCaptureFailed => " + failure.getReason());
+//                                    }
+//
+//                                    @Override
+//                                    public void onCaptureProgressed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureResult partialResult) {
+//                                        super.onCaptureProgressed(session, request, partialResult);
+//                                        Integer aeState = partialResult.get(CaptureResult.CONTROL_AE_STATE);
+//                                        Log.d(TAG, "1 onCaptureProgressed => " + aeState);
+////                                        session.capture(captureBuilder.build(), captureListener, null);
+//                                    }
+//
+//                                    @Override
+//                                    public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+//                                        super.onCaptureCompleted(session, request, result);
+//                                        Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+//                                        Log.d(TAG, "1 onCaptureCompleted => " + aeState);
+//                                    }
+//                                }, mBackgroundHandler);
+                        session.capture(captureBuilder.build(), new CameraCaptureSession.CaptureCallback() {
+                                    @Override
+                                    public void onCaptureSequenceCompleted(@NonNull CameraCaptureSession session, int sequenceId, long frameNumber) {
+                                        super.onCaptureSequenceCompleted(session, sequenceId, frameNumber);
+                                        Log.d(TAG, "onCaptureSequenceCompleted");
+                                    }
+
+                                    @Override
+                                    public void onCaptureSequenceAborted(@NonNull CameraCaptureSession session, int sequenceId) {
+                                        super.onCaptureSequenceAborted(session, sequenceId);
+                                        Log.d(TAG, "onCaptureSequenceAborted");
+                                    }
+
+                                    @Override
+                                    public void onCaptureBufferLost(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull Surface target, long frameNumber) {
+                                        super.onCaptureBufferLost(session, request, target, frameNumber);
+                                        Log.d(TAG, "onCaptureBufferLost => " + request);
+                                    }
+
+                                    @Override
+                                    public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
+                                        super.onCaptureStarted(session, request, timestamp, frameNumber);
+                                        Log.d(TAG, "onCaptureStarted => " + request);
+                                    }
+
+                                    @Override
+                                    public void onCaptureFailed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureFailure failure) {
+                                        super.onCaptureFailed(session, request, failure);
+                                        Log.d(TAG, "onCaptureFailed => " + request);
+                                    }
+
+                                    @Override
+                                    public void onCaptureProgressed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureResult partialResult) {
+                                        super.onCaptureProgressed(session, request, partialResult);
+                                        Integer aeState = partialResult.get(CaptureResult.CONTROL_AE_STATE);
+                                        Log.d(TAG, "onCaptureProgressed => " + aeState);
+//                                        session.capture(captureBuilder.build(), captureListener, null);
+                                    }
+
+                                    @Override
+                                    public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+                                        super.onCaptureCompleted(session, request, result);
+                                        Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                                        Log.d(TAG, "onCaptureCompleted => " + aeState);
+                                        activity.runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                Map<String, Object> params = new HashMap<>();
+                                                params.put("path", file.getAbsolutePath());
+                                                methodChannel.invokeMethod("onImageCaptured", params);
+//                            createCameraPreview();
+//                            unlockFocus();
+                                                cameraCaptureSessions.close();
+                                                createCameraPreviewSession();
+                                            }
+                                        });
+                                    }
+                                },
+                                mBackgroundHandler);
                     } catch (CameraAccessException e) {
                         e.printStackTrace();
                     }

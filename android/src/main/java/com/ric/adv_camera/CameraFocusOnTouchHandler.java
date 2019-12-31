@@ -124,6 +124,7 @@ public class CameraFocusOnTouchHandler implements View.OnTouchListener {
         Rect m = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
         float current_finger_spacing;
 
+        Log.d(TAG, "event.getPointerCount() => " + event.getPointerCount());
         if (event.getPointerCount() > 1) {
             // Multi touch logic
             current_finger_spacing = getFingerSpacing(event);
@@ -247,6 +248,8 @@ public class CameraFocusOnTouchHandler implements View.OnTouchListener {
                 halfTouchWidth * 2,
                 halfTouchHeight * 2,
                 MeteringRectangle.METERING_WEIGHT_MAX - 1);
+
+        Log.d(TAG, "focus =? " + focusAreaTouch);
 
         CameraCaptureSession.CaptureCallback captureCallbackHandler = new CameraCaptureSession.CaptureCallback() {
             @Override
