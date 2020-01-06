@@ -1,3 +1,7 @@
+## 1.0.0
+
+- Fixing inconsistency on some device with its result rotated 90 degree more, hopefully this works for every device
+
 ## 0.0.6
 
 - Add bestPictureSize parameter for initial run on Android, because each device's default picture size may vary, example on MI 8 Lite, its default picture size is the lowest
