@@ -1,3 +1,7 @@
+## 1.0.0+1
+
+- Add fileNamePrefix as initial parameter on AdvCamera
+
 ## 1.0.0
 
 - Fixing inconsistency on some device with its result rotated 90 degree more, hopefully this works for every device
