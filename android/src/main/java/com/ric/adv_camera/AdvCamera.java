@@ -119,7 +119,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             if (savePath != null) {
                 this.savePath = savePath.toString();
             } else {
-                this.savePath = Environment.getExternalStorageDirectory() + "/whatsappCamera";
+                this.savePath = Environment.getExternalStorageDirectory() + "/images";
             }
 
             if (previewRatio != null) {
@@ -435,7 +435,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
             int orientation = setCameraDisplayOrientation(0);
 
-            param.setRotation(orientation);
+//            param.setRotation(orientation); //dicomment karena kmaren itu hp xiaomi 4a dan huawei ke-rotate
 
             try {
                 camera.setParameters(param);
@@ -532,7 +532,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private void refreshCameraPreview(Camera.Parameters param) {
         try {
             int orientation = setCameraDisplayOrientation(0);
-            param.setRotation(orientation);
+//            param.setRotation(orientation); //dicomment karena kmaren itu hp xiaomi 4a dan huawei ke-rotate
             camera.setParameters(param);
 
             camera.setPreviewDisplay(surfaceHolder);
@@ -723,6 +723,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             Camera.getCameraInfo(1, info);
         }
 
+        Log.d("ricric", info.orientation + " & " + orientation);
         if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
             rotation = (info.orientation - orientation + 360) % 360;
         } else {
