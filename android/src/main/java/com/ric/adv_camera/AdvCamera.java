@@ -96,7 +96,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
         if (args instanceof HashMap) {
             Map<String, Object> params = (Map<String, Object>) args;
-            Object initialCamera = params.get("initialCamera");
+            Object initialCamera = params.get("initialCameraType");
             Object flashType = params.get("flashType");
             Object savePath = params.get("savePath");
             Object previewRatio = params.get("previewRatio");
