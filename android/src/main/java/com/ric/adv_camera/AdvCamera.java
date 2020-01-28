@@ -432,6 +432,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             param.setPreviewSize(selectedSize.width, selectedSize.height);
             param.setPictureSize(pictureSize.width, pictureSize.height);
             param.setFlashMode(this.flashType);
+            param.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
 
             int orientation = setCameraDisplayOrientation(0);
 
