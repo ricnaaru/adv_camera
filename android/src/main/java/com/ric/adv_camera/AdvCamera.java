@@ -96,7 +96,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
         if (args instanceof HashMap) {
             Map<String, Object> params = (Map<String, Object>) args;
-            Object initialCamera = params.get("initialCamera");
+            Object initialCamera = params.get("initialCameraType");
             Object flashType = params.get("flashType");
             Object savePath = params.get("savePath");
             Object previewRatio = params.get("previewRatio");
@@ -432,6 +432,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             param.setPreviewSize(selectedSize.width, selectedSize.height);
             param.setPictureSize(pictureSize.width, pictureSize.height);
             param.setFlashMode(this.flashType);
+            param.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
 
             int orientation = setCameraDisplayOrientation(0);
 
