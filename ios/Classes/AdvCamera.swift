@@ -4,7 +4,6 @@
 //
 //  Created by Richardo GVT on 30/09/19.
 //
-
 import Flutter
 import Photos
 import AVFoundation
@@ -372,7 +371,11 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
         
         DispatchQueue.global(qos: .userInitiated).async { //[weak self] in
             self.captureSession.startRunning()
-            DispatchQueue.main.async {
+            
+            //this 200ms delay is necessary because without this, the screen will be grey for the first time
+            // somehow the first time running is faster than the getView from FlutterNativeView function
+            let seconds = 0.2
+            DispatchQueue.main.asyncAfter(deadline: .now() + seconds) {
                 self.videoPreviewLayer.frame = self.previewView.bounds
                 
                 if (self.camera!.hasTorch) {

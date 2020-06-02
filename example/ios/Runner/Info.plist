@@ -47,5 +47,8 @@
 	<true/>
     <key>NSPhotoLibraryAddUsageDescription</key>
     <string>Allows you to capture your best moment</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Allows you to capture your best moment</string>
+    
 </dict>
 </plist>
