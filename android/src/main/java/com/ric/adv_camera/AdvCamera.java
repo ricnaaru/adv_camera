@@ -654,6 +654,11 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
             int reqHeight = metrics.heightPixels;
             int reqWidth = metrics.widthPixels;
+            // Fix for exporting image with correct resolution in landscape mode
+            if(reqWidth > reqHeight){
+            reqHeight = metrics.widthPixels;
+            reqWidth = metrics.heightPixels;
+            }
 
 //            // Fix for exporting image with correct resolution in landscape mode
 //            if(reqWidth > reqHeight){
