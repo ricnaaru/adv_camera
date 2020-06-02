@@ -3,6 +3,7 @@ library adv_camera;
 import 'dart:async';
 import 'dart:io';
 
+import 'package:adv_camera/adv_camera_plugin.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -66,6 +67,7 @@ class _AdvCameraState extends State<AdvCamera> {
   CameraPreviewRatio _cameraPreviewRatio;
   CameraSessionPreset _cameraSessionPreset;
   FlashType _flashType;
+  bool hasPermission = false;
 
   @override
   void initState() {
@@ -73,6 +75,13 @@ class _AdvCameraState extends State<AdvCamera> {
     _cameraPreviewRatio = widget.cameraPreviewRatio;
     _cameraSessionPreset = widget.cameraSessionPreset;
     _flashType = widget.flashType;
+
+    AdvCameraPlugin.checkForPermission().then((value) {
+      if (this.mounted)
+        setState(() {
+          hasPermission = value;
+        });
+    });
   }
 
   @override
@@ -80,6 +89,9 @@ class _AdvCameraState extends State<AdvCamera> {
     String previewRatio;
     String sessionPreset;
     String flashType;
+
+    if (!hasPermission)
+      return Center(child: CircularProgressIndicator());
 
     switch (_flashType) {
       case FlashType.on:

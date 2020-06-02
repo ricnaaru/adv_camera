@@ -1,5 +1,7 @@
 package com.ric.adv_camera;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -20,12 +22,18 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 
-import java.io.ByteArrayOutputStream;
+import androidx.annotation.NonNull;
+
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.MultiplePermissionsReport;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -35,6 +43,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import io.flutter.plugin.common.MethodCall;
@@ -55,7 +64,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private int cameraFacing = 0;
     private SavePicTask savePicTask;
     private Camera.PictureCallback jpegCallback;
-    private File folder = null;
+    private File folder;
     private Integer maxSize;
     private String savePath;
     private String fileNamePrefix = "adv_camera";
@@ -77,15 +86,16 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         methodChannel =
                 new MethodChannel(registrar.messenger(), "plugins.flutter.io/adv_camera/" + id);
         methodChannel.setMethodCallHandler(this);
-        view = registrar.activity().getLayoutInflater().inflate(R.layout.activity_camera, null);
-        imgSurface = view.findViewById(R.id.imgSurface);
-        CameraFragment cameraFragment = (CameraFragment) activity.getFragmentManager().findFragmentById(R.id.cameraFragment);
+        view = registrar.activity().getLayoutInflater().inflate(com.ric.adv_camera.R.layout.activity_camera, null);
+        imgSurface = view.findViewById(com.ric.adv_camera.R.id.imgSurface);
+        com.ric.adv_camera.CameraFragment cameraFragment = (com.ric.adv_camera.CameraFragment) activity.getFragmentManager().findFragmentById(com.ric.adv_camera.R.id.cameraFragment);
         imgSurface.setFocusable(true);
         imgSurface.setFocusableInTouchMode(true);
 
-        cameraFragment.listener = new FragmentLifecycleListener() {
+        cameraFragment.listener = new com.ric.adv_camera.FragmentLifecycleListener() {
             @Override
             public void onPause() {
+                camera.stopPreview();
             }
 
             @Override
@@ -95,6 +105,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         };
 
         if (args instanceof HashMap) {
+            @SuppressWarnings({"unchecked"})
             Map<String, Object> params = (Map<String, Object>) args;
             Object initialCamera = params.get("initialCameraType");
             Object flashType = params.get("flashType");
@@ -160,7 +171,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 } else {
                     // handle single touch events
                     if (action == MotionEvent.ACTION_UP) {
-                        handleFocus(event, params);
+                        handleFocus(event);
                     }
                 }
                 return true;
@@ -178,7 +189,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         jpegCallback = new Camera.PictureCallback() {
             public void onPictureTaken(byte[] data, Camera camera) {
-                refreshCamera();
+                camera.stopPreview();
 
                 cancelSavePicTaskIfNeed();
                 savePicTask = new SavePicTask(data, getPhotoRotation());
@@ -194,171 +205,190 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     }
 
     @Override
-    public void onMethodCall(MethodCall methodCall, MethodChannel.Result result) {
-        if (methodCall.method.equals("waitForCamera")) {
-            result.success(null);
-        } else if (methodCall.method.equals("setPreviewRatio")) {
-            String previewRatio = "";
+    public void onMethodCall(MethodCall methodCall, @NonNull MethodChannel.Result result) {
+        switch (methodCall.method) {
+            case "waitForCamera":
+                result.success(null);
+                break;
+            case "setPreviewRatio": {
+                String previewRatio = "";
 
-            if (methodCall.arguments instanceof HashMap) {
-                Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
-                previewRatio = params.get("previewRatio") == null ? null : params.get("previewRatio").toString();
-            }
-
-            Camera.Parameters param = camera.getParameters();
-
-            List<Camera.Size> sizes = param.getSupportedPreviewSizes();
-            Camera.Size selectedSize = null;
-            for (Camera.Size size : sizes) {
-                if (asFraction(size.width, size.height).equals(previewRatio)) {
-                    selectedSize = size;
-                    break;
+                if (methodCall.arguments instanceof HashMap) {
+                    @SuppressWarnings({"unchecked"})
+                    Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
+                    Object previewRatioRaw = params.get("previewRatio");
+                    previewRatio = previewRatioRaw == null ? null : previewRatioRaw.toString();
                 }
-            }
 
-            if (selectedSize == null) {
-                result.success(false);
-                return;
-            }
+                Camera.Parameters param = camera.getParameters();
 
-            this.previewRatio = previewRatio;
-
-            param.setPreviewSize(selectedSize.width, selectedSize.height);
-
-            camera.stopPreview();
-            camera.setParameters(param);
-            try {
-                camera.setPreviewDisplay(surfaceHolder);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            camera.startPreview();
-
-            result.success(true);
-        } else if (methodCall.method.equals("captureImage")) {
-            Integer maxSize = null;
-
-            if (methodCall.arguments instanceof HashMap) {
-                Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
-                maxSize = params.get("maxSize") == null ? null : (Integer) params.get("maxSize");
-            }
-
-            if (maxSize != null) {
-                this.maxSize = maxSize;
-            }
-
-            captureImage();
-
-            result.success(true);
-        } else if (methodCall.method.equals("switchCamera")) {
-            if (cameraFacing == 0) {
-                cameraFacing = 1;
-            } else {
-                cameraFacing = 0;
-            }
-
-            camera.stopPreview();
-            camera.release();
-            setupCamera();
-        } else if (methodCall.method.equals("getPictureSizes")) {
-            List<String> pictureSizes = new ArrayList<>();
-
-            Camera.Parameters param = camera.getParameters();
-
-            List<Camera.Size> sizes = param.getSupportedPictureSizes();
-            for (Camera.Size size : sizes) {
-                pictureSizes.add(size.width + ":" + size.height);
-            }
-
-            result.success(pictureSizes);
-        } else if (methodCall.method.equals("setPictureSize")) {
-            int pictureWidth = 0;
-            int pictureHeight = 0;
-            String error = "";
-
-            if (methodCall.arguments instanceof HashMap) {
-                Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
-                pictureWidth = (int) params.get("pictureWidth");
-                pictureHeight = (int) params.get("pictureHeight");
-            }
-
-            Camera.Parameters param = camera.getParameters();
-
-            param.setPictureSize(pictureWidth, pictureHeight);
-
-            camera.stopPreview();
-
-            try {
-                camera.setParameters(param);
-                camera.setPreviewDisplay(surfaceHolder);
-                this.pictureSize = camera.new Size(pictureWidth, pictureHeight);
-            } catch (IOException e) {
-                error = e.getMessage();
-            } catch (RuntimeException e) {
-                error = e.getMessage();
-            }
-
-            camera.startPreview();
-
-            if (error.isEmpty()) {
-                result.success(true);
-            } else {
-                result.error("Camera Error", "setPictureSize", error);
-            }
-        } else if (methodCall.method.equals("setSavePath")) {
-            if (methodCall.arguments instanceof HashMap) {
-                Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
-                this.savePath = params.get("savePath") == null ? null : params.get("savePath").toString();
-            }
-
-            folder = new File(this.savePath);
-
-            if (!folder.exists()) {
-                folder.mkdirs();
-            }
-
-            result.success(true);
-        } else if (methodCall.method.equals("setFlashType")) {
-            String flashType = "auto";
-
-            if (methodCall.arguments instanceof HashMap) {
-                Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
-                flashType = params.get("flashType") == null ? "auto" : params.get("flashType").toString();
-            }
-
-            Camera.Parameters param = camera.getParameters();
-
-            if (this.flashType.equals("torch") && flashType.equals("on")) {
-                param.setFlashMode("off");
-                camera.setParameters(param);
-            }
-
-            if (flashType.equals("torch")) {
-                List<String> supportedFlashModes = param.getSupportedFlashModes();
-
-                if (supportedFlashModes != null) {
-                    if (supportedFlashModes.contains(Camera.Parameters.FLASH_MODE_TORCH)) {
-                        this.flashType = Camera.Parameters.FLASH_MODE_TORCH;
-                    } else if (supportedFlashModes.contains(Camera.Parameters.FLASH_MODE_ON)) {
-                        this.flashType = Camera.Parameters.FLASH_MODE_ON;
+                List<Camera.Size> sizes = param.getSupportedPreviewSizes();
+                Camera.Size selectedSize = null;
+                for (Camera.Size size : sizes) {
+                    if (asFraction(size.width, size.height).equals(previewRatio)) {
+                        selectedSize = size;
+                        break;
                     }
                 }
-            } else {
-                this.flashType = flashType;
+
+                if (selectedSize == null) {
+                    result.success(false);
+                    return;
+                }
+
+                this.previewRatio = previewRatio;
+
+                param.setPreviewSize(selectedSize.width, selectedSize.height);
+
+                camera.stopPreview();
+                camera.setParameters(param);
+                try {
+                    camera.setPreviewDisplay(surfaceHolder);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                camera.startPreview();
+
+                result.success(true);
+                break;
             }
+            case "captureImage":
+                Integer maxSize = null;
 
-            param.setFlashMode(this.flashType);
+                if (methodCall.arguments instanceof HashMap) {
+                    @SuppressWarnings({"unchecked"})
+                    Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
+                    maxSize = params.get("maxSize") == null ? null : (Integer) params.get("maxSize");
+                }
 
-            camera.stopPreview();
-            camera.setParameters(param);
-            try {
-                camera.setPreviewDisplay(surfaceHolder);
-            } catch (IOException e) {
-                e.printStackTrace();
+                if (maxSize != null) {
+                    this.maxSize = maxSize;
+                }
+
+                captureImage();
+
+                result.success(true);
+                break;
+            case "switchCamera":
+                if (cameraFacing == 0) {
+                    cameraFacing = 1;
+                } else {
+                    cameraFacing = 0;
+                }
+
+                camera.stopPreview();
+                camera.release();
+                setupCamera();
+                break;
+            case "getPictureSizes": {
+                List<String> pictureSizes = new ArrayList<>();
+
+                Camera.Parameters param = camera.getParameters();
+
+                List<Camera.Size> sizes = param.getSupportedPictureSizes();
+                for (Camera.Size size : sizes) {
+                    pictureSizes.add(size.width + ":" + size.height);
+                }
+
+                result.success(pictureSizes);
+                break;
             }
-            camera.startPreview();
+            case "setPictureSize": {
+                int pictureWidth = 0;
+                int pictureHeight = 0;
+                String error = "";
 
-            result.success(true);
+                if (methodCall.arguments instanceof HashMap) {
+                    @SuppressWarnings({"unchecked"})
+                    Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
+                    pictureWidth = (int) params.get("pictureWidth");
+                    pictureHeight = (int) params.get("pictureHeight");
+                }
+
+                Camera.Parameters param = camera.getParameters();
+
+                param.setPictureSize(pictureWidth, pictureHeight);
+
+                camera.stopPreview();
+
+                try {
+                    camera.setParameters(param);
+                    camera.setPreviewDisplay(surfaceHolder);
+                    this.pictureSize = camera.new Size(pictureWidth, pictureHeight);
+                } catch (IOException e) {
+                    error = e.getMessage();
+                } catch (RuntimeException e) {
+                    error = e.getMessage();
+                }
+
+                camera.startPreview();
+
+                if (error.isEmpty()) {
+                    result.success(true);
+                } else {
+                    result.error("Camera Error", "setPictureSize", error);
+                }
+                break;
+            }
+            case "setSavePath":
+                if (methodCall.arguments instanceof HashMap) {
+                    @SuppressWarnings({"unchecked"})
+                    Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
+                    this.savePath = params.get("savePath") == null ? null : params.get("savePath").toString();
+                }
+
+                folder = new File(this.savePath);
+
+                if (!folder.exists()) {
+                    folder.mkdirs();
+                }
+
+                result.success(true);
+                break;
+            case "setFlashType": {
+                String flashType = "auto";
+
+                if (methodCall.arguments instanceof HashMap) {
+                    @SuppressWarnings({"unchecked"})
+                    Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
+                    flashType = params.get("flashType") == null ? "auto" : params.get("flashType").toString();
+                }
+
+                Camera.Parameters param = camera.getParameters();
+
+                if (this.flashType.equals("torch") && flashType.equals("on")) {
+                    param.setFlashMode("off");
+                    camera.setParameters(param);
+                }
+
+                if (flashType.equals("torch")) {
+                    List<String> supportedFlashModes = param.getSupportedFlashModes();
+
+                    if (supportedFlashModes != null) {
+                        if (supportedFlashModes.contains(Camera.Parameters.FLASH_MODE_TORCH)) {
+                            this.flashType = Camera.Parameters.FLASH_MODE_TORCH;
+                        } else if (supportedFlashModes.contains(Camera.Parameters.FLASH_MODE_ON)) {
+                            this.flashType = Camera.Parameters.FLASH_MODE_ON;
+                        }
+                    }
+                } else {
+                    this.flashType = flashType;
+                }
+
+                param.setFlashMode(translateFlashType(param.getSupportedFlashModes()));
+
+                camera.stopPreview();
+                camera.setParameters(param);
+                try {
+                    camera.setPreviewDisplay(surfaceHolder);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                camera.startPreview();
+
+                result.success(true);
+                break;
+            }
         }
     }
 
@@ -375,8 +405,8 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         disposed = true;
         methodChannel.setMethodCallHandler(null);
 
-        CameraFragment f = (CameraFragment) activity.getFragmentManager()
-                .findFragmentById(R.id.cameraFragment);
+        com.ric.adv_camera.CameraFragment f = (com.ric.adv_camera.CameraFragment) activity.getFragmentManager()
+                .findFragmentById(com.ric.adv_camera.R.id.cameraFragment);
         if (f != null) {
             activity.getFragmentManager().beginTransaction().remove(f).commit();
         }
@@ -407,7 +437,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 Collections.sort(sizes2, new Comparator<Camera.Size>() {
                     @Override
                     public int compare(Camera.Size o1, Camera.Size o2) {
-                        return (o2.width-o1.width) + (o2.height-o1.height);
+                        return (o2.width - o1.width) + (o2.height - o1.height);
                     }
                 });
 
@@ -431,8 +461,16 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
             param.setPreviewSize(selectedSize.width, selectedSize.height);
             param.setPictureSize(pictureSize.width, pictureSize.height);
-            param.setFlashMode(this.flashType);
-            param.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+            param.setFlashMode(translateFlashType(param.getSupportedFlashModes()));
+
+            List<String> supportedFocusMode = param.getSupportedFocusModes();
+            String focusMode = Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE;
+            if (!supportedFocusMode.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+                if (supportedFocusMode.size() > 0) {
+                    focusMode = supportedFocusMode.get(0);
+                }
+            }
+            param.setFocusMode(focusMode);
 
             int orientation = setCameraDisplayOrientation(0);
 
@@ -449,6 +487,27 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+
+    public String translateFlashType(List<String> supportedModes) {
+        String result = this.flashType;
+
+        if (cameraFacing == 1) {
+            if (!this.flashType.equals("off")) {
+                result = "on";
+            }
+        }
+
+        if (!supportedModes.contains(result)) {
+            if (supportedModes.size() > 0) {
+                result = supportedModes.get(0);
+            } else {
+                result = "";
+            }
+        }
+
+        return result;
     }
 
     @Override
@@ -476,19 +535,16 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         if (Build.MODEL.equalsIgnoreCase("Nexus 6") && cameraFacing == 1) {
             rotation = Surface.ROTATION_180;
         }
+
         int degrees = 0;
         switch (rotation) {
 
             case Surface.ROTATION_0:
-
                 degrees = 0;
                 break;
-
             case Surface.ROTATION_90:
-
                 degrees = 90;
                 break;
-
             case Surface.ROTATION_180:
                 degrees = 180;
                 break;
@@ -522,8 +578,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         try {
             camera.stopPreview();
             Camera.Parameters param = camera.getParameters();
-            param.setFlashMode(this.flashType.equals("torch") ? "off" : this.flashType);
-
+            param.setFlashMode(translateFlashType(param.getSupportedFlashModes()));
             refreshCameraPreview(param);
         } catch (Exception e) {
             e.printStackTrace();
@@ -532,8 +587,9 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
     private void refreshCameraPreview(Camera.Parameters param) {
         try {
+            //this is unnecessary because on certain device (Xiaomi 4A / Huawei) it is rotated
             int orientation = setCameraDisplayOrientation(0);
-//            param.setRotation(orientation); //dicomment karena kmaren itu hp xiaomi 4a dan huawei ke-rotate
+//            param.setRotation(orientation);
             camera.setParameters(param);
 
             camera.setPreviewDisplay(surfaceHolder);
@@ -550,11 +606,12 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         }
     }
 
+    @SuppressLint("StaticFieldLeak")
     private class SavePicTask extends AsyncTask<Void, Void, String> {
         private byte[] data;
-        private int rotation = 0;
+        private int rotation;
 
-        public SavePicTask(byte[] data, int rotation) {
+        SavePicTask(byte[] data, int rotation) {
             this.data = data;
             this.rotation = rotation;
         }
@@ -575,16 +632,18 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
         @Override
         protected void onPostExecute(String result) {
-            Map<String, Object> params = new HashMap<String, Object>();
+            Map<String, Object> params = new HashMap<>();
             params.put("path", result);
             methodChannel.invokeMethod("onImageCaptured", params);
 
+            refreshCamera();
 
         }
     }
 
-    public String saveToSDCard(byte[] data, int rotation) throws IOException {
+    private String saveToSDCard(byte[] data, int rotation) {
         String imagePath = "";
+
         try {
             final BitmapFactory.Options options = new BitmapFactory.Options();
             options.inJustDecodeBounds = true;
@@ -595,6 +654,12 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
             int reqHeight = metrics.heightPixels;
             int reqWidth = metrics.widthPixels;
+
+//            // Fix for exporting image with correct resolution in landscape mode
+//            if(reqWidth > reqHeight){
+//                reqHeight = metrics.widthPixels;
+//                reqWidth = metrics.heightPixels;
+//            }
 
             options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
 
@@ -612,17 +677,14 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 int width = initialHeight < initialWidth ? maxSize : (int) (initialWidth / initialHeight * maxSize);
                 int height = initialWidth <= initialHeight ? maxSize : (int) (initialHeight / initialWidth * maxSize);
 
-                Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, width,
+                bitmap = Bitmap.createScaledBitmap(bitmap, width,
                         height, true);
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
-
-                bitmap = resizedBitmap;
             }
 
             if (rotation != 0) {
                 Matrix mat = new Matrix();
                 mat.postRotate(rotation);
+
                 Bitmap bitmap1 = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), mat, true);
                 if (bitmap != bitmap1) {
                     bitmap.recycle();
@@ -676,7 +738,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         return imagePath;
     }
 
-    public int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+    private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
         final int height = options.outHeight;
         final int width = options.outWidth;
         int inSampleSize = 1;
@@ -694,7 +756,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private String getSavePhotoLocal(Bitmap bitmap) {
         String path = "";
         Date currentTime = Calendar.getInstance().getTime();
-        DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
+        DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
         try {
             OutputStream output;
             File file = new File(folder.getAbsolutePath(), fileNamePrefix + "_" + dateFormat.format(currentTime) + ".jpg");
@@ -724,7 +786,6 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             Camera.getCameraInfo(1, info);
         }
 
-        Log.d("ricric", info.orientation + " & " + orientation);
         if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
             rotation = (info.orientation - orientation + 360) % 360;
         } else {
@@ -738,10 +799,8 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         OrientationEventListener myOrientationEventListener = new OrientationEventListener(context, SensorManager.SENSOR_DELAY_NORMAL) {
             @Override
             public void onOrientationChanged(int iAngle) {
-
-                final int iLookup[] = {0, 0, 0, 90, 90, 90, 90, 90, 90, 180, 180, 180, 180, 180, 180, 270, 270, 270, 270, 270, 270, 0, 0, 0}; // 15-degree increments
+                final int[] iLookup = {0, 0, 0, 90, 90, 90, 90, 90, 90, 180, 180, 180, 180, 180, 180, 270, 270, 270, 270, 270, 270, 0, 0, 0}; // 15-degree increments
                 if (iAngle != ORIENTATION_UNKNOWN) {
-
                     int iNewOrientation = iLookup[iAngle / 15];
                     if (iOrientation != iNewOrientation) {
                         iOrientation = iNewOrientation;
@@ -761,19 +820,15 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             return 0;
         }
 
-        if (degrees > 45 && degrees <= 135) {
+        if (degrees <= 135) {
             return 90;
         }
 
-        if (degrees > 135 && degrees <= 225) {
+        if (degrees <= 225) {
             return 180;
         }
 
-        if (degrees > 225 && degrees <= 315) {
-            return 270;
-        }
-
-        throw new RuntimeException("Error....");
+        return 270;
     }
 
 
@@ -798,17 +853,15 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         camera.setParameters(params);
     }
 
-    public void handleFocus(MotionEvent event, Camera.Parameters params) {
+    private void handleFocus(MotionEvent event) {
         int pointerId = event.getPointerId(0);
         int pointerIndex = event.findPointerIndex(pointerId);
         // Get the pointer's current position
-
 
         int xxw = imgSurface.getHeight();
         int xxh = imgSurface.getWidth();
         float x = event.getY(pointerIndex);
         float y = xxh - event.getX(pointerIndex);
-
 
         //cancel previous actions
         camera.cancelAutoFocus();
@@ -857,16 +910,25 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         try {
             parameters = camera.getParameters();
         } catch (Exception e) {
-            Log.e("error", "lalalalalala=> " + e);
+            Log.e("Error", "Error getting parameter:" + e);
         }
 
         // check if parameters are set (handle RuntimeException: getParameters failed (empty parameters))
         if (parameters != null) {
-            List<Camera.Area> mylist2 = new ArrayList<Camera.Area>();
+            List<Camera.Area> mylist2 = new ArrayList<>();
 
             mylist2.add(new Camera.Area(focusRect, 1000));
-            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-            parameters.setFocusAreas(mylist2);
+
+            List<String> supportedFocusMode = parameters.getSupportedFocusModes();
+            String focusMode = Camera.Parameters.FOCUS_MODE_AUTO;
+            if (!supportedFocusMode.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+                if (supportedFocusMode.size() > 0) {
+                    focusMode = supportedFocusMode.get(0);
+                }
+            }
+            parameters.setFocusMode(focusMode);
+            if (focusMode == Camera.Parameters.FOCUS_MODE_AUTO)
+                parameters.setFocusAreas(mylist2);
 
             try {
                 camera.setParameters(parameters);
@@ -879,16 +941,6 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 Log.e("error", "lalalalalala=> " + e);
             }
         }
-    }
-
-    private int clamp(int x, int min, int max) {
-        if (x > max) {
-            return max;
-        }
-        if (x < min) {
-            return min;
-        }
-        return x;
     }
 
     private float getFingerSpacing(MotionEvent event) {
@@ -909,4 +961,8 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         long gcm = gcm(a, b);
         return (a / gcm) + ":" + (b / gcm);
     }
+}
+
+interface CustomMultiplePermissionsListener {
+    void onPermissionsChecked(MultiplePermissionsReport report);
 }
