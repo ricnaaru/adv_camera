@@ -1,3 +1,9 @@
+## 1.1.0
+
+- Add permission on both Android and IOS
+- fixing the grey screen when first loading with IOS
+- fixing the set parameter failed on Android
+
 ## 1.0.0+1
 
 - Add fileNamePrefix as initial parameter on AdvCamera
