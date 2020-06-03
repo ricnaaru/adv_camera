@@ -1,3 +1,7 @@
+## 1.1.1
+
+- freeze ios camera after taking picture
+
 ## 1.1.0
 
 - Add permission on both Android and IOS
