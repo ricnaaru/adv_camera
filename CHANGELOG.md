@@ -1,3 +1,7 @@
+## 1.1.1+1
+
+- clean up and check if the camera is null before stop preview on paused
+
 ## 1.1.1
 
 - freeze ios camera after taking picture
