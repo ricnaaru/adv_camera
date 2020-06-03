@@ -95,6 +95,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         cameraFragment.listener = new com.ric.adv_camera.FragmentLifecycleListener() {
             @Override
             public void onPause() {
+                if (camera != null)
                 camera.stopPreview();
             }
 
