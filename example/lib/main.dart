@@ -134,6 +134,7 @@ class _MyAppState extends State<MyApp> {
                         onCameraCreated: _onCameraCreated,
                         onImageCaptured: (String path) {
                           print("onImageCaptured => " + path);
+                          if (this.mounted)
                           setState(() {
                             imagePath = path;
                           });

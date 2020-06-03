@@ -372,9 +372,9 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
         DispatchQueue.global(qos: .userInitiated).async { //[weak self] in
             self.captureSession.startRunning()
             
-            //this 200ms delay is necessary because without this, the screen will be grey for the first time
+            //this 500ms delay is necessary because without this, the screen will be grey for the first time
             // somehow the first time running is faster than the getView from FlutterNativeView function
-            let seconds = 0.2
+            let seconds = 0.5
             DispatchQueue.main.asyncAfter(deadline: .now() + seconds) {
                 self.videoPreviewLayer.frame = self.previewView.bounds
                 
@@ -425,49 +425,57 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
         if let videoConnection = stillImageOutput.connection(with: AVMediaType.video) {
             stillImageOutput.captureStillImageAsynchronously(from: videoConnection) {
                 (imageDataSampleBuffer, error) -> Void in
-                let imageData = AVCaptureStillImageOutput.jpegStillImageNSDataRepresentation(imageDataSampleBuffer!)
-                let imageTemp: UIImage = UIImage(data: imageData!)!
-                let result: Bool = self.saveImage(image: imageTemp)
-                
-                if (!result) {
+                self.captureSession.stopRunning()
+                if let imageDataSampleBuffer = imageDataSampleBuffer {
+                    let imageData = AVCaptureStillImageOutput.jpegStillImageNSDataRepresentation(imageDataSampleBuffer)
+                    let imageTemp: UIImage = UIImage(data: imageData!)!
+                    let result: Bool = self.saveImage(image: imageTemp)
+                    
+                    if (!result) {
+                        print("Image save error!")
+                    }
+                } else {
                     print("Image save error!")
                 }
+                self.captureSession.startRunning()
             }
         }
     }
     
     func saveImage(image: UIImage) -> Bool {
-        let rotatedImage = rotateImage(image: image)!
-        let newImage = resizeImage(image: rotatedImage)!
-        guard let data = newImage.jpegData(compressionQuality: 1) ?? newImage.pngData() else {
-            return false
-        }
-        guard let directory = try? FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false) as NSURL else {
-            return false
-        }
-        
-        let timestamp = NSDate().timeIntervalSince1970
-        let myTimeInterval = TimeInterval(timestamp)
-        let time = NSDate(timeIntervalSince1970: TimeInterval(myTimeInterval))
-        let dateFormatterGet = DateFormatter()
-        dateFormatterGet.dateFormat = "yyyyMMdd_HHmmss"
-        
-        let fileURL = directory.appendingPathComponent("\(self.fileNamePrefix)_\(dateFormatterGet.string(from: time as Date)).jpg")
-        if !FileManager.default.fileExists(atPath: fileURL!.path) {
-            FileManager.default.createFile(atPath: fileURL!.path, contents: data, attributes: nil)
-        } else {
-            do {
-                try data.write(to: fileURL!)
-            } catch {
-                print(error.localizedDescription)
+        autoreleasepool {
+            let rotatedImage = rotateImage(image: image)!
+            let newImage = resizeImage(image: rotatedImage)!
+            guard let data = newImage.jpegData(compressionQuality: 1) ?? newImage.pngData() else {
+                return false
             }
+            guard let directory = try? FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false) as NSURL else {
+                return false
+            }
+            
+            let timestamp = NSDate().timeIntervalSince1970
+            let myTimeInterval = TimeInterval(timestamp)
+            let time = NSDate(timeIntervalSince1970: TimeInterval(myTimeInterval))
+            let dateFormatterGet = DateFormatter()
+            dateFormatterGet.dateFormat = "yyyyMMdd_HHmmss"
+            
+            let fileURL = directory.appendingPathComponent("\(self.fileNamePrefix)_\(dateFormatterGet.string(from: time as Date)).jpg")
+            if !FileManager.default.fileExists(atPath: fileURL!.path) {
+                FileManager.default.createFile(atPath: fileURL!.path, contents: data, attributes: nil)
+            } else {
+                do {
+                    try data.write(to: fileURL!)
+                } catch {
+                    print(error.localizedDescription)
+                }
+            }
+            
+            var dict: [String: String] = [String:String]()
+            
+            dict["path"] = fileURL?.path
+            _channel.invokeMethod("onImageCaptured", arguments: dict)
+            return true
         }
-        
-        var dict: [String: String] = [String:String]()
-        
-        dict["path"] = fileURL?.path
-        _channel.invokeMethod("onImageCaptured", arguments: dict)
-        return true
     }
     
     func resizeImage(image: UIImage) -> UIImage? {
