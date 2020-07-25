@@ -78,13 +78,6 @@ class _AdvCameraState extends State<AdvCamera> {
     _cameraSessionPreset = widget.cameraSessionPreset;
     _flashType = widget.flashType;
 
-    WidgetsBinding.instance.addObserver(LifecycleEventHandler(
-      onDetached: () async => print("onDetached"),
-      onResumed: () async => print("onResumed"),
-      onPaused: () async => print("onPaused"),
-      onInactive: () async => print("onInactive"),
-    ));
-
     AdvCameraPlugin.checkForPermission().then((value) {
       if (this.mounted)
         setState(() {

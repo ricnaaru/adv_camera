@@ -1,3 +1,11 @@
+## 1.1.2+1
+
+- remove onResume on IOS, because apparently the camera will start right away when it's resumed
+
+## 1.1.2
+
+- fix that the camera is not closed after disposing the widget
+
 ## 1.1.1+1
 
 - clean up and check if the camera is null before stop preview on paused

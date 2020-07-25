@@ -19,23 +19,6 @@ class _CameraAppState extends State<CameraApp> {
   String imagePath;
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void didUpdateWidget(CameraApp oldWidget) {
-    print("didUpdateWidget id => ${widget.id}");
-    super.didUpdateWidget(oldWidget);
-  }
-
-  @override
-  void dispose() {
-    print("dispose id => ${widget.id}");
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
