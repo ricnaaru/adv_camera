@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:adv_camera/adv_camera_plugin.dart';
+import 'package:adv_camera/lifecycle_handler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -68,6 +69,7 @@ class _AdvCameraState extends State<AdvCamera> {
   CameraSessionPreset _cameraSessionPreset;
   FlashType _flashType;
   bool hasPermission = false;
+  AdvCameraController _controller;
 
   @override
   void initState() {
@@ -75,6 +77,13 @@ class _AdvCameraState extends State<AdvCamera> {
     _cameraPreviewRatio = widget.cameraPreviewRatio;
     _cameraSessionPreset = widget.cameraSessionPreset;
     _flashType = widget.flashType;
+
+    WidgetsBinding.instance.addObserver(LifecycleEventHandler(
+      onDetached: () async => print("onDetached"),
+      onResumed: () async => print("onResumed"),
+      onPaused: () async => print("onPaused"),
+      onInactive: () async => print("onInactive"),
+    ));
 
     AdvCameraPlugin.checkForPermission().then((value) {
       if (this.mounted)
@@ -85,13 +94,18 @@ class _AdvCameraState extends State<AdvCamera> {
   }
 
   @override
+  void dispose() {
+    _controller.turnOffCamera();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     String previewRatio;
     String sessionPreset;
     String flashType;
 
-    if (!hasPermission)
-      return Center(child: CircularProgressIndicator());
+    if (!hasPermission) return Center(child: CircularProgressIndicator());
 
     switch (_flashType) {
       case FlashType.on:
@@ -269,6 +283,8 @@ class _AdvCameraState extends State<AdvCamera> {
     if (widget.onCameraCreated != null) {
       widget.onCameraCreated(controller);
     }
+
+    _controller = controller;
   }
 
   /// @return the greatest common denominator

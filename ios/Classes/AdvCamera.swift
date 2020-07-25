@@ -9,6 +9,10 @@ import Photos
 import AVFoundation
 import CoreMotion
 
+extension FlutterViewController {
+    
+}
+
 public class AdvCameraView : NSObject, FlutterPlatformView {
     var captureSession: AVCaptureSession!
     var previewView: BoundsObservableView
@@ -40,6 +44,7 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
         stillImageOutput = AVCaptureStillImageOutput()
         
         super.init()
+        
         
         NotificationCenter.default.addObserver(self, selector: #selector(orientationChanged), name:  Notification.Name("UIDeviceOrientationDidChangeNotification"), object: nil)
         
@@ -149,6 +154,10 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                 self.saveToCamera()
                 result(nil)
             } else if call.method == "setPreviewRatio" {
+                result(nil)
+            } else if call.method == "turnOff" {
+                self.captureSession.stopRunning()
+                
                 result(nil)
             } else if call.method == "switchCamera" {
                 let videoDevices = AVCaptureDevice.devices(for: AVMediaType.video)
