@@ -211,6 +211,10 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             case "waitForCamera":
                 result.success(null);
                 break;
+            case "turnOff":
+                camera.stopPreview();
+                result.success(null);
+                break;
             case "setPreviewRatio": {
                 String previewRatio = "";
 
