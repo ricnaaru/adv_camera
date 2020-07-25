@@ -193,18 +193,6 @@ class _CameraAppState extends State<CameraApp> {
                 onPressed: () {
                   cameraController.captureImage();
                 }),
-            Container(height: 16.0),
-            FloatingActionButton(
-                heroTag: "test3",
-                child: Icon(Icons.camera),
-                onPressed: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (BuildContext context) {
-                        String id = DateTime.now().toIso8601String();
-                        print("id => $id");
-                        return CameraApp(id: id);
-                      }));
-                }),
           ]),
     );
   }

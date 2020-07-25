@@ -45,6 +45,8 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
         
         super.init()
         
+        NotificationCenter.default.addObserver(self, selector: #selector(onResume), name:
+        UIApplication.willEnterForegroundNotification, object: nil)
         
         NotificationCenter.default.addObserver(self, selector: #selector(orientationChanged), name:  Notification.Name("UIDeviceOrientationDidChangeNotification"), object: nil)
         
@@ -254,6 +256,10 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
         self.previewView.addGestureRecognizer(pinchRecognizer)
         self.previewView.addGestureRecognizer(tap)
         self.previewView.backgroundColor = UIColor.black.withAlphaComponent(0.3)
+    }
+    
+    @objc func onResume() {
+        setupLivePreview()
     }
     
     func outputAccelertionData(_ acceleration: CMAcceleration) {
