@@ -1,3 +1,7 @@
+## 1.1.2+2
+
+- turn off camera for android only happen in native
+
 ## 1.1.2+1
 
 - remove onResume on IOS, because apparently the camera will start right away when it's resumed

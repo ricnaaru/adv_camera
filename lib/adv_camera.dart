@@ -87,12 +87,6 @@ class _AdvCameraState extends State<AdvCamera> {
   }
 
   @override
-  void dispose() {
-    _controller.turnOffCamera();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     String previewRatio;
     String sessionPreset;
