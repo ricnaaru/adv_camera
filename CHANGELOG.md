@@ -1,3 +1,7 @@
+## 1.1.2+3
+
+- fix ios no camera case (for emulator)
+
 ## 1.1.2+2
 
 - turn off camera for android only happen in native
