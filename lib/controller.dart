@@ -36,6 +36,10 @@ class AdvCameraController {
         String path = call.arguments['path'] as String;
         _advCameraState.onImageCaptured(path);
         break;
+      case "onFlashTypeChanged":
+        String types = call.arguments['types'] as String;
+        _advCameraState.onImageCaptured(types);
+        break;
       default:
         throw MissingPluginException();
     }
@@ -182,6 +186,30 @@ class AdvCameraController {
     var x = await channel.invokeMethod('setFlashType', {"flashType": flashTypeString});
 
     print("setFlashType => $x");
+  }
+
+  Future<List<FlashType>> getFlashType() async {
+    final types = await channel.invokeMethod('getFlashType');
+
+    List<FlashType> finalTypes = [];
+
+    if (types == null) return finalTypes;
+
+    if (types is List) {
+      for (var each in types) {
+        if (each == "on") {
+          finalTypes.add(FlashType.on);
+        } else if (each == "off") {
+          finalTypes.add(FlashType.off);
+        } else if (each == "torch") {
+          finalTypes.add(FlashType.torch);
+        } else if (each == "auto") {
+          finalTypes.add(FlashType.auto);
+        }
+      }
+    }
+
+    return finalTypes;
   }
 
 //  Future<void> changeCamera() async {

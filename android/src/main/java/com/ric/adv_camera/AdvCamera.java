@@ -350,6 +350,11 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
                 result.success(true);
                 break;
+            case "getFlashType": {
+                Camera.Parameters param = camera.getParameters();
+                result.success(param.getSupportedFlashModes());
+                break;
+            }
             case "setFlashType": {
                 String flashType = "auto";
 
@@ -504,7 +509,9 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             }
         }
 
-        if (!supportedModes.contains(result)) {
+        Log.d("ricric", "modes => " + supportedModes);
+
+        if (supportedModes != null && !supportedModes.contains(result)) {
             if (supportedModes.size() > 0) {
                 result = supportedModes.get(0);
             } else {

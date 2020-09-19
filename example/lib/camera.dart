@@ -1,5 +1,3 @@
-
-
 import 'dart:io';
 
 import 'package:adv_camera/adv_camera.dart';
@@ -132,18 +130,18 @@ class _CameraAppState extends State<CameraApp> {
                 ),
                 Expanded(
                     child: Container(
-                      child: AdvCamera(
-                        onCameraCreated: _onCameraCreated,
-                        onImageCaptured: (String path) {
-                          print("onImageCaptured => " + path);
-                          if (this.mounted)
-                            setState(() {
-                              imagePath = path;
-                            });
-                        },
-                        cameraPreviewRatio: CameraPreviewRatio.r16_9,
-                      ),
-                    )),
+                  child: AdvCamera(
+                    onCameraCreated: _onCameraCreated,
+                    onImageCaptured: (String path) {
+                      print("onImageCaptured => " + path);
+                      if (this.mounted)
+                        setState(() {
+                          imagePath = path;
+                        });
+                    },
+                    cameraPreviewRatio: CameraPreviewRatio.r16_9,
+                  ),
+                )),
               ],
             ),
             Positioned(
@@ -151,9 +149,9 @@ class _CameraAppState extends State<CameraApp> {
               left: 16.0,
               child: imagePath != null
                   ? Container(
-                  width: 100.0,
-                  height: 100.0,
-                  child: Image.file(File(imagePath)))
+                      width: 100.0,
+                      height: 100.0,
+                      child: Image.file(File(imagePath)))
                   : Icon(Icons.image),
             )
           ],
@@ -164,11 +162,15 @@ class _CameraAppState extends State<CameraApp> {
           mainAxisSize: MainAxisSize.min,
           children: [
             FloatingActionButton(
-                heroTag: "test1",
-                child: Icon(Icons.switch_camera),
-                onPressed: () {
-                  cameraController.switchCamera();
-                }),
+              heroTag: "test1",
+              child: Icon(Icons.switch_camera),
+              onPressed: () async {
+                await cameraController.switchCamera();
+                List<FlashType> types = await cameraController.getFlashType();
+
+
+              },
+            ),
             Container(height: 16.0),
             FloatingActionButton(
                 heroTag: "test2",

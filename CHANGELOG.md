@@ -1,3 +1,8 @@
+## 1.1.3
+
+- Fix error when changing into camera without flash (android)
+- add getFlashType
+
 ## 1.1.2+3
 
 - fix ios no camera case (for emulator)
