@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 
 void main() {
   String id = DateTime.now().toIso8601String();
-  print("id => $id");
   runApp(MaterialApp(home: MyApp(id: id)));
 }
 
@@ -34,7 +33,6 @@ class _MyAppState extends State<MyApp> {
             Navigator.push(context,
                 MaterialPageRoute(builder: (BuildContext context) {
                   String id = DateTime.now().toIso8601String();
-                  print("id => $id");
                   return CameraApp(id: id);
                 }));
           }),
