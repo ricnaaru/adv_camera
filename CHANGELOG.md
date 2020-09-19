@@ -1,3 +1,7 @@
+## 1.1.3+1
+
+- Fix switch camera without result in Android
+
 ## 1.1.3
 
 - Fix error when changing into camera without flash (android)

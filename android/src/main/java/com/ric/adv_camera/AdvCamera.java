@@ -284,6 +284,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 camera.stopPreview();
                 camera.release();
                 setupCamera();
+                result.success(true);
                 break;
             case "getPictureSizes": {
                 List<String> pictureSizes = new ArrayList<>();
