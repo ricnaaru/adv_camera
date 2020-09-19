@@ -190,7 +190,7 @@ class AdvCameraController {
 
   Future<List<FlashType>> getFlashType() async {
     final types = await channel.invokeMethod('getFlashType');
-
+print("getFlashType => $types");
     List<FlashType> finalTypes = [];
 
     if (types == null) return finalTypes;

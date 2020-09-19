@@ -161,6 +161,26 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                 result(nil)
             } else if call.method == "setPreviewRatio" {
                 result(nil)
+            } else if call.method == "getFlashType" {
+                var flashTypes = [String]()
+                
+                if let camera = self.camera {
+                    if camera.isFlashModeSupported(.auto) {
+                        flashTypes.append("auto")
+                    }
+                    if camera.isFlashModeSupported(.on) {
+                        flashTypes.append("on")
+                    }
+                    if camera.isFlashModeSupported(.off) {
+                        flashTypes.append("off")
+                    }
+                    
+                    if camera.isTorchModeSupported(.on) {
+                        flashTypes.append("torch")
+                    }
+                }
+                
+                result(flashTypes)
             } else if call.method == "turnOff" {
                 self.captureSession.stopRunning()
 
