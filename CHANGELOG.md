@@ -1,3 +1,7 @@
+## 1.2.0
+
+- Do some tidy ups
+
 ## 1.1.3+1
 
 - Fix switch camera without result in Android
