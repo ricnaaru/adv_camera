@@ -20,128 +20,54 @@ class _CameraAppState extends State<CameraApp> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Plugin example app'),
+        title: const Text('AdvCamera Example'),
       ),
       body: SafeArea(
         child: Stack(
           children: [
             Column(
               children: [
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Container(
-                    color: Colors.purple,
-                    child: Row(
-                      children: [
-                        FlatButton(
-                          child: Text("Auto"),
-                          onPressed: () {
-                            cameraController.setFlashType(FlashType.auto);
-                          },
-                        ),
-                        FlatButton(
-                          child: Text("On"),
-                          onPressed: () {
-                            cameraController.setFlashType(FlashType.on);
-                          },
-                        ),
-                        FlatButton(
-                          child: Text("Off"),
-                          onPressed: () {
-                            cameraController.setFlashType(FlashType.off);
-                          },
-                        ),
-                        FlatButton(
-                          child: Text("Torch"),
-                          onPressed: () {
-                            cameraController.setFlashType(FlashType.torch);
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Container(
-                    color: Colors.orange,
-                    child: Row(
-                      children: [
-                        FlatButton(
-                          child: Text(Platform.isAndroid ? "1:1" : "Low"),
-                          onPressed: () {
-                            cameraController
-                                .setPreviewRatio(CameraPreviewRatio.r1);
-                            cameraController
-                                .setSessionPreset(CameraSessionPreset.low);
-                          },
-                        ),
-                        FlatButton(
-                          child: Text(Platform.isAndroid ? "4:3" : "Medium"),
-                          onPressed: () {
-                            cameraController
-                                .setPreviewRatio(CameraPreviewRatio.r4_3);
-                            cameraController
-                                .setSessionPreset(CameraSessionPreset.medium);
-                          },
-                        ),
-                        FlatButton(
-                          child: Text(Platform.isAndroid ? "11:9" : "High"),
-                          onPressed: () {
-                            cameraController
-                                .setPreviewRatio(CameraPreviewRatio.r11_9);
-                            cameraController
-                                .setSessionPreset(CameraSessionPreset.high);
-                          },
-                        ),
-                        FlatButton(
-                          child: Text(Platform.isAndroid ? "16:9" : "Best"),
-                          onPressed: () {
-                            cameraController
-                                .setPreviewRatio(CameraPreviewRatio.r16_9);
-                            cameraController
-                                .setSessionPreset(CameraSessionPreset.photo);
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Container(
-                  color: Colors.blue,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: this.pictureSizes.map((pictureSize) {
-                        return FlatButton(
-                          child: Text(pictureSize),
-                          onPressed: () {
-                            cameraController.setPictureSize(
-                                int.tryParse(pictureSize.substring(
-                                    0, pictureSize.indexOf(":"))),
-                                int.tryParse(pictureSize.substring(
-                                    pictureSize.indexOf(":") + 1,
-                                    pictureSize.length)));
-                          },
-                        );
-                      }).toList(),
-                    ),
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      buildFlashSettings(context),
+                      Container(
+                        margin: EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ).copyWith(bottom: 16),
+                        height: 1,
+                        width: double.infinity,
+                        color: Colors.grey,
+                      ),
+                      buildRatioSettings(context),
+                      Container(
+                        margin: EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ).copyWith(bottom: 16),
+                        height: 1,
+                        width: double.infinity,
+                        color: Colors.grey,
+                      ),
+                      buildImageOutputSettings(context),
+                    ],
                   ),
                 ),
                 Expanded(
-                    child: Container(
-                  child: AdvCamera(
-                    onCameraCreated: _onCameraCreated,
-                    onImageCaptured: (String path) {
-                      print("onImageCaptured => " + path);
-                      if (this.mounted)
-                        setState(() {
-                          imagePath = path;
-                        });
-                    },
-                    cameraPreviewRatio: CameraPreviewRatio.r16_9,
+                  child: Container(
+                    child: AdvCamera(
+                      onCameraCreated: _onCameraCreated,
+                      onImageCaptured: (String path) {
+                        if (this.mounted)
+                          setState(() {
+                            imagePath = path;
+                          });
+                      },
+                      cameraPreviewRatio: CameraPreviewRatio.r16_9,
+                    ),
                   ),
-                )),
+                ),
               ],
             ),
             Positioned(
@@ -151,34 +77,35 @@ class _CameraAppState extends State<CameraApp> {
                   ? Container(
                       width: 100.0,
                       height: 100.0,
-                      child: Image.file(File(imagePath)))
+                      child: Image.file(File(imagePath)),
+                    )
                   : Icon(Icons.image),
             )
           ],
         ),
       ),
       floatingActionButton: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            FloatingActionButton(
-              heroTag: "test1",
-              child: Icon(Icons.switch_camera),
-              onPressed: () async {
-                await cameraController.switchCamera();
-                List<FlashType> types = await cameraController.getFlashType();
-
-
-              },
-            ),
-            Container(height: 16.0),
-            FloatingActionButton(
-                heroTag: "test2",
-                child: Icon(Icons.camera),
-                onPressed: () {
-                  cameraController.captureImage();
-                }),
-          ]),
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            heroTag: "test1",
+            child: Icon(Icons.switch_camera),
+            onPressed: () async {
+              await cameraController.switchCamera();
+              List<FlashType> types = await cameraController.getFlashType();
+            },
+          ),
+          Container(height: 16.0),
+          FloatingActionButton(
+            heroTag: "test2",
+            child: Icon(Icons.camera),
+            onPressed: () {
+              cameraController.captureImage();
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -192,5 +119,130 @@ class _CameraAppState extends State<CameraApp> {
         this.pictureSizes = pictureSizes;
       });
     });
+  }
+
+  Widget buildFlashSettings(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(left: 16),
+          child: Text("Flash Setting"),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Container(
+            child: Row(
+              children: [
+                FlatButton(
+                  child: Text("Auto"),
+                  onPressed: () {
+                    cameraController.setFlashType(FlashType.auto);
+                  },
+                ),
+                FlatButton(
+                  child: Text("On"),
+                  onPressed: () {
+                    cameraController.setFlashType(FlashType.on);
+                  },
+                ),
+                FlatButton(
+                  child: Text("Off"),
+                  onPressed: () {
+                    cameraController.setFlashType(FlashType.off);
+                  },
+                ),
+                FlatButton(
+                  child: Text("Torch"),
+                  onPressed: () {
+                    cameraController.setFlashType(FlashType.torch);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildRatioSettings(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(left: 16),
+          child: Text("Ratio Setting"),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Container(
+            child: Row(
+              children: [
+                FlatButton(
+                  child: Text(Platform.isAndroid ? "1:1" : "Low"),
+                  onPressed: () {
+                    cameraController.setPreviewRatio(CameraPreviewRatio.r1);
+                    cameraController.setSessionPreset(CameraSessionPreset.low);
+                  },
+                ),
+                FlatButton(
+                  child: Text(Platform.isAndroid ? "4:3" : "Medium"),
+                  onPressed: () {
+                    cameraController.setPreviewRatio(CameraPreviewRatio.r4_3);
+                    cameraController
+                        .setSessionPreset(CameraSessionPreset.medium);
+                  },
+                ),
+                FlatButton(
+                  child: Text(Platform.isAndroid ? "11:9" : "High"),
+                  onPressed: () {
+                    cameraController.setPreviewRatio(CameraPreviewRatio.r11_9);
+                    cameraController.setSessionPreset(CameraSessionPreset.high);
+                  },
+                ),
+                FlatButton(
+                  child: Text(Platform.isAndroid ? "16:9" : "Best"),
+                  onPressed: () {
+                    cameraController.setPreviewRatio(CameraPreviewRatio.r16_9);
+                    cameraController
+                        .setSessionPreset(CameraSessionPreset.photo);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildImageOutputSettings(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(left: 16),
+          child: Text("Image Output Setting"),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: this.pictureSizes.map((pictureSize) {
+              return FlatButton(
+                child: Text(pictureSize),
+                onPressed: () {
+                  cameraController.setPictureSize(
+                      int.tryParse(
+                          pictureSize.substring(0, pictureSize.indexOf(":"))),
+                      int.tryParse(pictureSize.substring(
+                          pictureSize.indexOf(":") + 1, pictureSize.length)));
+                },
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
   }
 }

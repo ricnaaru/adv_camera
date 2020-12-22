@@ -1,5 +1,5 @@
 name: adv_camera_example
-version: 1.1.1+1
+version: 1.0.0+1
 description: Demonstrates how to use the adv_camera plugin.
 publish_to: 'none'
 

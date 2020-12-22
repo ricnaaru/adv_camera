@@ -3,12 +3,23 @@
   <component name="AndroidLogFilters">
     <option name="TOOL_WINDOW_CONFIGURED_FILTER" value="Show only selected application" />
   </component>
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="d3001fd1-bb60-488f-aae6-3fa961c4d4ca" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/example/.flutter-plugins-dependencies" beforeDir="false" afterPath="$PROJECT_DIR$/example/.flutter-plugins-dependencies" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/ios/.symlinks/plugins/adv_camera/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/example/ios/.symlinks/plugins/adv_camera/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/example/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/android/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/example/android/app/src/main/AndroidManifest.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/android/app/src/main/java/com/ric/adv_camera_example/MainActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/example/android/app/src/main/java/com/ric/adv_camera_example/MainActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/android/app/src/main/res/values/styles.xml" beforeDir="false" afterPath="$PROJECT_DIR$/example/android/app/src/main/res/values/styles.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/ios/Flutter/flutter_export_environment.sh" beforeDir="false" afterPath="$PROJECT_DIR$/example/ios/Flutter/flutter_export_environment.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/lib/camera.dart" beforeDir="false" afterPath="$PROJECT_DIR$/example/lib/camera.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/example/pubspec.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/example/pubspec.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -32,15 +43,17 @@
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
-    <option name="showExcludedFiles" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="dart.analysis.tool.window.force.activate" value="false" />
+    <property name="dart.analysis.tool.window.visible" value="false" />
     <property name="io.flutter.reload.alreadyRun" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="settings.editor.selected.configurable" value="flutter.settings" />
+    <property name="settings.editor.selected.configurable" value="dart.settings" />
     <property name="show.migrate.to.gradle.popup" value="false" />
   </component>
   <component name="SvnConfiguration">
@@ -57,26 +70,37 @@
     <servers />
   </component>
   <component name="WindowStateProjectService">
-    <state width="1398" height="212" key="GridCell.Tab.0.bottom" timestamp="1600504290075">
-      <screen x="0" y="23" width="1440" height="829" />
+    <state x="184" y="85" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1608663065332">
+      <screen x="0" y="23" width="1440" height="806" />
     </state>
+    <state x="184" y="85" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.23.1440.806@0.23.1440.806" timestamp="1608663065332" />
+    <state width="1398" height="205" key="GridCell.Tab.0.bottom" timestamp="1608663205362">
+      <screen x="0" y="23" width="1440" height="806" />
+    </state>
+    <state width="1398" height="205" key="GridCell.Tab.0.bottom/0.23.1440.806@0.23.1440.806" timestamp="1608663205362" />
     <state width="1398" height="212" key="GridCell.Tab.0.bottom/0.23.1440.829@0.23.1440.829" timestamp="1600504290075" />
-    <state width="1398" height="212" key="GridCell.Tab.0.center" timestamp="1600504290075">
-      <screen x="0" y="23" width="1440" height="829" />
+    <state width="1398" height="205" key="GridCell.Tab.0.center" timestamp="1608663205361">
+      <screen x="0" y="23" width="1440" height="806" />
     </state>
+    <state width="1398" height="205" key="GridCell.Tab.0.center/0.23.1440.806@0.23.1440.806" timestamp="1608663205361" />
     <state width="1398" height="212" key="GridCell.Tab.0.center/0.23.1440.829@0.23.1440.829" timestamp="1600504290075" />
-    <state width="1398" height="212" key="GridCell.Tab.0.left" timestamp="1600504290074">
-      <screen x="0" y="23" width="1440" height="829" />
+    <state width="1398" height="205" key="GridCell.Tab.0.left" timestamp="1608663205361">
+      <screen x="0" y="23" width="1440" height="806" />
     </state>
+    <state width="1398" height="205" key="GridCell.Tab.0.left/0.23.1440.806@0.23.1440.806" timestamp="1608663205361" />
     <state width="1398" height="212" key="GridCell.Tab.0.left/0.23.1440.829@0.23.1440.829" timestamp="1600504290074" />
-    <state width="1398" height="212" key="GridCell.Tab.0.right" timestamp="1600504290075">
-      <screen x="0" y="23" width="1440" height="829" />
+    <state width="1398" height="205" key="GridCell.Tab.0.right" timestamp="1608663205362">
+      <screen x="0" y="23" width="1440" height="806" />
     </state>
+    <state width="1398" height="205" key="GridCell.Tab.0.right/0.23.1440.806@0.23.1440.806" timestamp="1608663205361" />
     <state width="1398" height="212" key="GridCell.Tab.0.right/0.23.1440.829@0.23.1440.829" timestamp="1600504290075" />
+    <state x="221" y="62" key="SettingsEditor" timestamp="1608663063563">
+      <screen x="0" y="23" width="1440" height="806" />
+    </state>
+    <state x="221" y="62" key="SettingsEditor/0.23.1440.806@0.23.1440.806" timestamp="1608663063563" />
     <state x="372" y="196" width="695" height="486" key="find.popup" timestamp="1600504143731">
       <screen x="0" y="23" width="1440" height="829" />
     </state>
     <state x="372" y="196" width="695" height="486" key="find.popup/0.23.1440.829@0.23.1440.829" timestamp="1600504143731" />
-    <state x="372" y="197" width="695" height="486" key="find.popup/0.23.1440.834@0.23.1440.834" timestamp="1596786917091" />
   </component>
 </project>
