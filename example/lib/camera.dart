@@ -42,15 +42,17 @@ class _CameraAppState extends State<CameraApp> {
                         color: Colors.grey,
                       ),
                       buildRatioSettings(context),
-                      Container(
-                        margin: EdgeInsets.symmetric(
-                          horizontal: 16,
-                        ).copyWith(bottom: 16),
-                        height: 1,
-                        width: double.infinity,
-                        color: Colors.grey,
-                      ),
-                      buildImageOutputSettings(context),
+                      if (this.pictureSizes.isNotEmpty)
+                        Container(
+                          margin: EdgeInsets.symmetric(
+                            horizontal: 16,
+                          ).copyWith(bottom: 16),
+                          height: 1,
+                          width: double.infinity,
+                          color: Colors.grey,
+                        ),
+                      if (this.pictureSizes.isNotEmpty)
+                        buildImageOutputSettings(context),
                     ],
                   ),
                 ),
