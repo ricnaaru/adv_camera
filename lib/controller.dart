@@ -146,10 +146,8 @@ class AdvCameraController {
     // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
     // https://github.com/flutter/flutter/issues/26431
     // ignore: strong_mode_implicit_dynamic_method
-    var x = await channel
+    await channel
         .invokeMethod('setPictureSize', {"pictureWidth": width, "pictureHeight": height});
-
-    print("setPictureSize => $x");
   }
 
   Future<void> setSavePath(String savePath) async {
@@ -158,9 +156,7 @@ class AdvCameraController {
     // ignore: strong_mode_implicit_dynamic_method
     if (Platform.isIOS) return;
 
-    var x = await channel.invokeMethod('setSavePath', {"savePath": savePath});
-
-    print("setSavePath => $x");
+    await channel.invokeMethod('setSavePath', {"savePath": savePath});
   }
 
   Future<void> setFlashType(FlashType flashType) async {
@@ -183,14 +179,13 @@ class AdvCameraController {
         flashTypeString = "torch";
         break;
     }
-    var x = await channel.invokeMethod('setFlashType', {"flashType": flashTypeString});
 
-    print("setFlashType => $x");
+    await channel.invokeMethod('setFlashType', {"flashType": flashTypeString});
   }
 
   Future<List<FlashType>> getFlashType() async {
     final types = await channel.invokeMethod('getFlashType');
-print("getFlashType => $types");
+
     List<FlashType> finalTypes = [];
 
     if (types == null) return finalTypes;

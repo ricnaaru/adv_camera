@@ -122,7 +122,7 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                     do {
                         try camera.lockForConfiguration()
                     } catch {
-                        print("aaaa")
+                        print("Could not lock camera")
                     }
 
                    camera.flashMode = self.flashType
@@ -241,7 +241,7 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                         do {
                             try self.camera!.lockForConfiguration()
                         } catch {
-                            print("aaaa")
+                            print("Could not lock camera")
                         }
 
                         self.camera!.flashMode = self.flashType
@@ -423,7 +423,7 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                     do {
                         try self.camera!.lockForConfiguration()
                     } catch {
-                        print("aaaa")
+                        print("Could not lock camera")
                     }
 
                     self.camera!.flashMode = self.flashType
