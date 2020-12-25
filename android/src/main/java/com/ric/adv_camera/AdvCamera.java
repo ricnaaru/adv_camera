@@ -518,6 +518,8 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             } else {
                 result = "";
             }
+        } else {
+            result = "off";
         }
 
         return result;

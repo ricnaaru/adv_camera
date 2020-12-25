@@ -59,6 +59,7 @@ class _CameraAppState extends State<CameraApp> {
                 Expanded(
                   child: Container(
                     child: AdvCamera(
+                      initialCameraType: CameraType.front,
                       onCameraCreated: _onCameraCreated,
                       onImageCaptured: (String path) {
                         if (this.mounted)
