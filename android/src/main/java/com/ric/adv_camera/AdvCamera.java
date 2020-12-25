@@ -1,6 +1,5 @@
 package com.ric.adv_camera;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
@@ -23,12 +22,6 @@ import android.view.SurfaceView;
 import android.view.View;
 
 import androidx.annotation.NonNull;
-
-import com.karumi.dexter.Dexter;
-import com.karumi.dexter.MultiplePermissionsReport;
-import com.karumi.dexter.PermissionToken;
-import com.karumi.dexter.listener.PermissionRequest;
-import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -57,13 +50,13 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private final Context context;
     private final Activity activity;
     private boolean disposed = false;
-    private View view;
-    private SurfaceView imgSurface;
-    private SurfaceHolder surfaceHolder;
+    private final View view;
+    private final SurfaceView imgSurface;
+    private final SurfaceHolder surfaceHolder;
     private Camera camera;
     private int cameraFacing = 0;
     private SavePicTask savePicTask;
-    private Camera.PictureCallback jpegCallback;
+    private final Camera.PictureCallback jpegCallback;
     private File folder;
     private Integer maxSize;
     private String savePath;
@@ -75,7 +68,9 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private Camera.Size pictureSize;
     private String flashType = Camera.Parameters.FLASH_MODE_AUTO;
     private boolean bestPictureSize;
+    private View focusRect;
 
+    @SuppressLint({"InflateParams", "ClickableViewAccessibility"})
     AdvCamera(
             int id,
             final Context context,
@@ -88,11 +83,12 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         methodChannel.setMethodCallHandler(this);
         view = registrar.activity().getLayoutInflater().inflate(com.ric.adv_camera.R.layout.activity_camera, null);
         imgSurface = view.findViewById(com.ric.adv_camera.R.id.imgSurface);
-        com.ric.adv_camera.CameraFragment cameraFragment = (com.ric.adv_camera.CameraFragment) activity.getFragmentManager().findFragmentById(com.ric.adv_camera.R.id.cameraFragment);
+        focusRect = view.findViewById(R.id.focusRect);
+        CameraFragment cameraFragment = (CameraFragment) activity.getFragmentManager().findFragmentById(com.ric.adv_camera.R.id.cameraFragment);
         imgSurface.setFocusable(true);
         imgSurface.setFocusableInTouchMode(true);
 
-        cameraFragment.listener = new com.ric.adv_camera.FragmentLifecycleListener() {
+        cameraFragment.listener = new FragmentLifecycleListener() {
             @Override
             public void onPause() {
                 if (camera != null)
@@ -149,7 +145,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             }
 
             if (bestPictureSize != null) {
-                this.bestPictureSize = Boolean.valueOf(bestPictureSize.toString());
+                this.bestPictureSize = Boolean.parseBoolean(bestPictureSize.toString());
             }
         }
 
@@ -416,7 +412,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         disposed = true;
         methodChannel.setMethodCallHandler(null);
 
-        com.ric.adv_camera.CameraFragment f = (com.ric.adv_camera.CameraFragment) activity.getFragmentManager()
+        CameraFragment f = (CameraFragment) activity.getFragmentManager()
                 .findFragmentById(com.ric.adv_camera.R.id.cameraFragment);
         if (f != null) {
             activity.getFragmentManager().beginTransaction().remove(f).commit();
@@ -483,9 +479,9 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             }
             param.setFocusMode(focusMode);
 
-            int orientation = setCameraDisplayOrientation(0);
-
-//            param.setRotation(orientation); //dicomment karena kmaren itu hp xiaomi 4a dan huawei ke-rotate
+            /// I block this script because Xiaomi 4a and Huawei gets rotated because of this
+//            int orientation = setCameraDisplayOrientation(0);
+//            param.setRotation(orientation);
 
             try {
                 camera.setParameters(param);
@@ -509,8 +505,6 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 result = "on";
             }
         }
-
-        Log.d("ricric", "modes => " + supportedModes);
 
         if (supportedModes != null && !supportedModes.contains(result)) {
             if (supportedModes.size() > 0) {
@@ -541,9 +535,9 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         }
     }
 
-    private int setCameraDisplayOrientation(int cameraId) {
+    private int setCameraDisplayOrientation() {
         Camera.CameraInfo info = new Camera.CameraInfo();
-        Camera.getCameraInfo(cameraId, info);
+        Camera.getCameraInfo(0, info);
 
         int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
 
@@ -603,7 +597,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private void refreshCameraPreview(Camera.Parameters param) {
         try {
             //this is unnecessary because on certain device (Xiaomi 4A / Huawei) it is rotated
-            int orientation = setCameraDisplayOrientation(0);
+//            int orientation = setCameraDisplayOrientation();
 //            param.setRotation(orientation);
             camera.setParameters(param);
 
@@ -623,8 +617,8 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
     @SuppressLint("StaticFieldLeak")
     private class SavePicTask extends AsyncTask<Void, Void, String> {
-        private byte[] data;
-        private int rotation;
+        private final byte[] data;
+        private final int rotation;
 
         SavePicTask(byte[] data, int rotation) {
             this.data = data;
@@ -671,8 +665,8 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             int reqWidth = metrics.widthPixels;
             // Fix for exporting image with correct resolution in landscape mode
             if(reqWidth > reqHeight){
-            reqHeight = metrics.widthPixels;
-            reqWidth = metrics.heightPixels;
+                reqHeight = metrics.widthPixels;
+                reqWidth = metrics.heightPixels;
             }
 
 //            // Fix for exporting image with correct resolution in landscape mode
@@ -878,10 +872,14 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         int pointerIndex = event.findPointerIndex(pointerId);
         // Get the pointer's current position
 
-        int xxw = imgSurface.getHeight();
-        int xxh = imgSurface.getWidth();
+        int surfaceHeight = imgSurface.getHeight();
+        int surfaceWidth = imgSurface.getWidth();
+
         float x = event.getY(pointerIndex);
-        float y = xxh - event.getX(pointerIndex);
+        float y = surfaceWidth - event.getX(pointerIndex);
+
+        Log.d("handleFocus", "x => " + x);
+        Log.d("handleFocus", "y => " + y);
 
         //cancel previous actions
         camera.cancelAutoFocus();
@@ -891,6 +889,9 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 (int) (y - 100),
                 (int) (x + 100),
                 (int) (y + 100));
+
+        Log.d("handleFocus", "touch left => " + touchRect.left);
+        Log.d("handleFocus", "touch top => " + touchRect.top);
 
         int aboutToBeLeft = touchRect.left;
         int aboutToBeTop = touchRect.top;
@@ -905,25 +906,34 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             aboutToBeTop = 0;
             aboutToBeBottom = 200;
         }
-        if (aboutToBeRight > xxw) {
-            aboutToBeRight = xxw;
-            aboutToBeLeft = xxw - 200;
+        if (aboutToBeRight > surfaceHeight) {
+            aboutToBeRight = surfaceHeight;
+            aboutToBeLeft = surfaceHeight - 200;
         }
-        if (aboutToBeBottom > xxh) {
-            aboutToBeBottom = xxh;
-            aboutToBeTop = xxh - 200;
+        if (aboutToBeBottom > surfaceWidth) {
+            aboutToBeBottom = surfaceWidth;
+            aboutToBeTop = surfaceWidth - 200;
         }
 
-        aboutToBeLeft = aboutToBeLeft * 2000 / xxw - 1000;
-        aboutToBeTop = aboutToBeTop * 2000 / xxh - 1000;
-        aboutToBeRight = aboutToBeRight * 2000 / xxw - 1000;
-        aboutToBeBottom = aboutToBeBottom * 2000 / xxh - 1000;
+        aboutToBeLeft = aboutToBeLeft * 2000 / surfaceHeight - 1000;
+        aboutToBeTop = aboutToBeTop * 2000 / surfaceWidth - 1000;
+        aboutToBeRight = aboutToBeRight * 2000 / surfaceHeight - 1000;
+        aboutToBeBottom = aboutToBeBottom * 2000 / surfaceWidth - 1000;
 
         Rect focusRect = new Rect(
                 aboutToBeLeft,
                 aboutToBeTop,
                 aboutToBeRight,
                 aboutToBeBottom);
+
+        Log.d("handleFocus", "aboutToBeLeft => " + aboutToBeLeft);
+        Log.d("handleFocus", "aboutToBeTop => " + aboutToBeTop);
+        Log.d("handleFocus", "aboutToBeRight => " + aboutToBeRight);
+        Log.d("handleFocus", "aboutToBeBottom => " + aboutToBeBottom);
+        this.focusRect.setLeft(touchRect.left);
+        this.focusRect.setTop(touchRect.top);
+        this.focusRect.setRight(touchRect.right);
+        this.focusRect.setBottom(touchRect.bottom);
 
         Camera.Parameters parameters = null;
 
@@ -947,7 +957,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 }
             }
             parameters.setFocusMode(focusMode);
-            if (focusMode == Camera.Parameters.FOCUS_MODE_AUTO)
+            if (focusMode.equals(Camera.Parameters.FOCUS_MODE_AUTO))
                 parameters.setFocusAreas(mylist2);
 
             try {
@@ -958,7 +968,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                     }
                 });
             } catch (Exception e) {
-                Log.e("error", "lalalalalala=> " + e);
+                Log.e("error", "error => " + e);
             }
         }
     }
@@ -981,8 +991,4 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         long gcm = gcm(a, b);
         return (a / gcm) + ":" + (b / gcm);
     }
-}
-
-interface CustomMultiplePermissionsListener {
-    void onPermissionsChecked(MultiplePermissionsReport report);
 }

@@ -57,18 +57,30 @@ class _CameraAppState extends State<CameraApp> {
                   ),
                 ),
                 Expanded(
-                  child: Container(
-                    child: AdvCamera(
-                      initialCameraType: CameraType.front,
-                      onCameraCreated: _onCameraCreated,
-                      onImageCaptured: (String path) {
-                        if (this.mounted)
-                          setState(() {
-                            imagePath = path;
-                          });
-                      },
-                      cameraPreviewRatio: CameraPreviewRatio.r16_9,
-                    ),
+                  child: Stack(
+                    children: [
+                      AdvCamera(
+                        initialCameraType: CameraType.front,
+                        onCameraCreated: _onCameraCreated,
+                        onImageCaptured: (String path) {
+                          if (this.mounted)
+                            setState(() {
+                              imagePath = path;
+                            });
+                        },
+                        cameraPreviewRatio: CameraPreviewRatio.r16_9,
+                      ),
+                      // Positioned.fill(
+                      //   child: GestureDetector(
+                      //     onTapUp: (TapUpDetails details) => _onTapUp(details),
+                      //     child: Container(
+                      //       width: 1000,
+                      //       color: Colors.green,
+                      //       height: 1000,
+                      //     ),
+                      //   ),
+                      // ),
+                    ],
                   ),
                 ),
               ],
@@ -122,6 +134,14 @@ class _CameraAppState extends State<CameraApp> {
         this.pictureSizes = pictureSizes;
       });
     });
+  }
+
+  _onTapUp(TapUpDetails details) {
+    var x = details.globalPosition.dx;
+    var y = details.globalPosition.dy;
+    // or user the local position method to get the offset
+    print(details.localPosition);
+    print("tap up " + x.toString() + ", " + y.toString());
   }
 
   Widget buildFlashSettings(BuildContext context) {
