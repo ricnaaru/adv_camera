@@ -90,7 +90,7 @@ class _CameraAppState extends State<CameraApp> {
         mainAxisSize: MainAxisSize.min,
         children: [
           FloatingActionButton(
-            heroTag: "test1",
+            heroTag: "switch",
             child: Icon(Icons.switch_camera),
             onPressed: () async {
               await cameraController.switchCamera();
@@ -98,7 +98,7 @@ class _CameraAppState extends State<CameraApp> {
           ),
           Container(height: 16.0),
           FloatingActionButton(
-            heroTag: "test2",
+            heroTag: "capture",
             child: Icon(Icons.camera),
             onPressed: () {
               cameraController.captureImage();

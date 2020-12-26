@@ -172,64 +172,34 @@ class _AdvCameraState extends State<AdvCamera> {
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        double lesser;
         double greater;
         double widthTemp;
         double heightTemp;
         double width;
         double height;
-        double selectedPreviewRatio;
-        double constraintRatio;
 
         if (constraints.maxWidth < constraints.maxHeight) {
           greater = constraints.maxHeight;
-          lesser = constraints.maxWidth;
-          constraintRatio = constraints.maxWidth / constraints.maxHeight;
         } else {
           greater = constraints.maxWidth;
-          lesser = constraints.maxHeight;
-          constraintRatio = constraints.maxHeight / constraints.maxWidth;
         }
 
         switch (_cameraPreviewRatio) {
           case CameraPreviewRatio.r16_9:
-            selectedPreviewRatio = 9.0 / 16.0;
-            if (constraintRatio >= selectedPreviewRatio) {
-              widthTemp = greater;
-              heightTemp = greater * 16.0 / 9.0;
-            } else {
-              widthTemp = greater;
-              heightTemp = greater * 16.0 / 9.0;
-            }
+            widthTemp = greater;
+            heightTemp = greater * 16.0 / 9.0;
             break;
           case CameraPreviewRatio.r11_9:
-            selectedPreviewRatio = 9.0 / 11.0;
-            if (constraintRatio >= selectedPreviewRatio) {
-              widthTemp = greater;
-              heightTemp = greater * 11.0 / 9.0;
-            } else {
-              widthTemp = greater;
-              heightTemp = greater * 11.0 / 9.0;
-            }
+            widthTemp = greater;
+            heightTemp = greater * 11.0 / 9.0;
             break;
           case CameraPreviewRatio.r4_3:
-            selectedPreviewRatio = 3.0 / 4.0;
-            if (constraintRatio >= selectedPreviewRatio) {
-              widthTemp = greater;
-              heightTemp = greater * 4.0 / 3.0;
-            } else {
-              widthTemp = greater;
-              heightTemp = greater * 4.0 / 3.0;
-            }
+            widthTemp = greater;
+            heightTemp = greater * 4.0 / 3.0;
             break;
           case CameraPreviewRatio.r1:
-            if (constraintRatio >= 1.0) {
-              widthTemp = greater;
-              heightTemp = greater;
-            } else {
-              heightTemp = greater;
-              widthTemp = greater;
-            }
+            widthTemp = greater;
+            heightTemp = greater;
             break;
         }
 
