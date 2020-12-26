@@ -44,6 +44,18 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.platform.PlatformView;
 
+class WaitForCameraObject {
+    MethodChannel.Result o;
+
+    public WaitForCameraObject(MethodChannel.Result o) {
+        this.o = o;
+    }
+
+    public void notifyCameraSet() {
+        o.success(true);
+    }
+}
+
 public class AdvCamera implements MethodChannel.MethodCallHandler,
         PlatformView, SurfaceHolder.Callback {
     private final MethodChannel methodChannel;
@@ -69,6 +81,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private String flashType = Camera.Parameters.FLASH_MODE_AUTO;
     private boolean bestPictureSize;
     private View focusRect;
+    private WaitForCameraObject waitForCameraObject;
 
     @SuppressLint({"InflateParams", "ClickableViewAccessibility"})
     AdvCamera(
@@ -92,7 +105,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             @Override
             public void onPause() {
                 if (camera != null)
-                camera.stopPreview();
+                    camera.stopPreview();
             }
 
             @Override
@@ -205,7 +218,10 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     public void onMethodCall(MethodCall methodCall, @NonNull MethodChannel.Result result) {
         switch (methodCall.method) {
             case "waitForCamera":
-                result.success(null);
+                if (camera == null)
+                    waitForCameraObject = new WaitForCameraObject(result);
+                else
+                    result.success(true);
                 break;
             case "turnOff":
                 camera.stopPreview();
@@ -436,6 +452,11 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             return;
         }
 
+        if (waitForCameraObject != null) {
+            waitForCameraObject.notifyCameraSet();
+            waitForCameraObject = null;
+        }
+
         try {
             Camera.Parameters param = camera.getParameters();
 
@@ -664,7 +685,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             int reqHeight = metrics.heightPixels;
             int reqWidth = metrics.widthPixels;
             // Fix for exporting image with correct resolution in landscape mode
-            if(reqWidth > reqHeight){
+            if (reqWidth > reqHeight) {
                 reqHeight = metrics.widthPixels;
                 reqWidth = metrics.heightPixels;
             }

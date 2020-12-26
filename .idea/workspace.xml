@@ -15,9 +15,7 @@
       <change beforePath="$PROJECT_DIR$/example/ios/.symlinks/plugins/adv_camera/android/src/main/java/com/ric/adv_camera/AdvCamera.java" beforeDir="false" afterPath="$PROJECT_DIR$/example/ios/.symlinks/plugins/adv_camera/android/src/main/java/com/ric/adv_camera/AdvCamera.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/example/ios/.symlinks/plugins/adv_camera/example/.flutter-plugins-dependencies" beforeDir="false" afterPath="$PROJECT_DIR$/example/ios/.symlinks/plugins/adv_camera/example/.flutter-plugins-dependencies" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/example/ios/.symlinks/plugins/adv_camera/example/lib/camera.dart" beforeDir="false" afterPath="$PROJECT_DIR$/example/ios/.symlinks/plugins/adv_camera/example/lib/camera.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/ios/.symlinks/plugins/adv_camera/lib/adv_camera.dart" beforeDir="false" afterPath="$PROJECT_DIR$/example/ios/.symlinks/plugins/adv_camera/lib/adv_camera.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/example/lib/camera.dart" beforeDir="false" afterPath="$PROJECT_DIR$/example/lib/camera.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/adv_camera.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/adv_camera.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -72,31 +70,31 @@
       <screen x="0" y="23" width="1440" height="806" />
     </state>
     <state x="184" y="85" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.23.1440.806@0.23.1440.806" timestamp="1608663065332" />
-    <state width="1398" height="205" key="GridCell.Tab.0.bottom" timestamp="1608974734683">
+    <state width="1398" height="205" key="GridCell.Tab.0.bottom" timestamp="1608987903656">
       <screen x="0" y="23" width="1440" height="804" />
     </state>
-    <state width="1398" height="205" key="GridCell.Tab.0.bottom/0.23.1440.804@0.23.1440.804" timestamp="1608974734683" />
+    <state width="1398" height="205" key="GridCell.Tab.0.bottom/0.23.1440.804@0.23.1440.804" timestamp="1608987903656" />
     <state width="1398" height="205" key="GridCell.Tab.0.bottom/0.23.1440.806@0.23.1440.806" timestamp="1608974377510" />
     <state width="1398" height="205" key="GridCell.Tab.0.bottom/0.23.1440.809@0.23.1440.809" timestamp="1608664371011" />
     <state width="1398" height="212" key="GridCell.Tab.0.bottom/0.23.1440.829@0.23.1440.829" timestamp="1600504290075" />
-    <state width="1398" height="205" key="GridCell.Tab.0.center" timestamp="1608974734682">
+    <state width="1398" height="205" key="GridCell.Tab.0.center" timestamp="1608987903655">
       <screen x="0" y="23" width="1440" height="804" />
     </state>
-    <state width="1398" height="205" key="GridCell.Tab.0.center/0.23.1440.804@0.23.1440.804" timestamp="1608974734682" />
+    <state width="1398" height="205" key="GridCell.Tab.0.center/0.23.1440.804@0.23.1440.804" timestamp="1608987903655" />
     <state width="1398" height="205" key="GridCell.Tab.0.center/0.23.1440.806@0.23.1440.806" timestamp="1608974377509" />
     <state width="1398" height="205" key="GridCell.Tab.0.center/0.23.1440.809@0.23.1440.809" timestamp="1608664371011" />
     <state width="1398" height="212" key="GridCell.Tab.0.center/0.23.1440.829@0.23.1440.829" timestamp="1600504290075" />
-    <state width="1398" height="205" key="GridCell.Tab.0.left" timestamp="1608974734681">
+    <state width="1398" height="205" key="GridCell.Tab.0.left" timestamp="1608987903655">
       <screen x="0" y="23" width="1440" height="804" />
     </state>
-    <state width="1398" height="205" key="GridCell.Tab.0.left/0.23.1440.804@0.23.1440.804" timestamp="1608974734681" />
+    <state width="1398" height="205" key="GridCell.Tab.0.left/0.23.1440.804@0.23.1440.804" timestamp="1608987903655" />
     <state width="1398" height="205" key="GridCell.Tab.0.left/0.23.1440.806@0.23.1440.806" timestamp="1608974377509" />
     <state width="1398" height="205" key="GridCell.Tab.0.left/0.23.1440.809@0.23.1440.809" timestamp="1608664371011" />
     <state width="1398" height="212" key="GridCell.Tab.0.left/0.23.1440.829@0.23.1440.829" timestamp="1600504290074" />
-    <state width="1398" height="205" key="GridCell.Tab.0.right" timestamp="1608974734682">
+    <state width="1398" height="205" key="GridCell.Tab.0.right" timestamp="1608987903655">
       <screen x="0" y="23" width="1440" height="804" />
     </state>
-    <state width="1398" height="205" key="GridCell.Tab.0.right/0.23.1440.804@0.23.1440.804" timestamp="1608974734682" />
+    <state width="1398" height="205" key="GridCell.Tab.0.right/0.23.1440.804@0.23.1440.804" timestamp="1608987903655" />
     <state width="1398" height="205" key="GridCell.Tab.0.right/0.23.1440.806@0.23.1440.806" timestamp="1608974377509" />
     <state width="1398" height="205" key="GridCell.Tab.0.right/0.23.1440.809@0.23.1440.809" timestamp="1608664371011" />
     <state width="1398" height="212" key="GridCell.Tab.0.right/0.23.1440.829@0.23.1440.829" timestamp="1600504290075" />
@@ -104,9 +102,10 @@
       <screen x="0" y="23" width="1440" height="806" />
     </state>
     <state x="221" y="62" key="SettingsEditor/0.23.1440.806@0.23.1440.806" timestamp="1608663063563" />
-    <state x="372" y="191" width="695" height="490" key="find.popup" timestamp="1608882340950">
-      <screen x="0" y="23" width="1440" height="806" />
+    <state x="372" y="191" width="695" height="490" key="find.popup" timestamp="1608988458754">
+      <screen x="0" y="23" width="1440" height="804" />
     </state>
+    <state x="372" y="191" width="695" height="490" key="find.popup/0.23.1440.804@0.23.1440.804" timestamp="1608988458754" />
     <state x="372" y="191" width="695" height="490" key="find.popup/0.23.1440.806@0.23.1440.806" timestamp="1608882340950" />
     <state x="372" y="196" width="695" height="486" key="find.popup/0.23.1440.829@0.23.1440.829" timestamp="1600504143731" />
     <state x="385" y="151" width="670" height="676" key="search.everywhere.popup" timestamp="1608984809570">

@@ -19,6 +19,7 @@ class AdvCameraController {
     // https://github.com/flutter/flutter/issues/26431
     // ignore: strong_mode_implicit_dynamic_method
     await channel.invokeMethod('waitForCamera');
+
     return AdvCameraController._(
       channel,
       advCameraState,
