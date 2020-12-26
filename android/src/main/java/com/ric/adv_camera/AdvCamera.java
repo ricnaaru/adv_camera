@@ -480,7 +480,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             param.setFocusMode(focusMode);
 
             /// I block this script because Xiaomi 4a and Huawei gets rotated because of this
-//            int orientation = setCameraDisplayOrientation(0);
+            int orientation = setCameraDisplayOrientation(0);
 //            param.setRotation(orientation);
 
             try {
@@ -535,9 +535,9 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         }
     }
 
-    private int setCameraDisplayOrientation() {
+    private int setCameraDisplayOrientation(int cameraId) {
         Camera.CameraInfo info = new Camera.CameraInfo();
-        Camera.getCameraInfo(0, info);
+        Camera.getCameraInfo(cameraId, info);
 
         int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
 
@@ -597,7 +597,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private void refreshCameraPreview(Camera.Parameters param) {
         try {
             //this is unnecessary because on certain device (Xiaomi 4A / Huawei) it is rotated
-//            int orientation = setCameraDisplayOrientation();
+            int orientation = setCameraDisplayOrientation(0);
 //            param.setRotation(orientation);
             camera.setParameters(param);
 

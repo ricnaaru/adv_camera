@@ -195,37 +195,37 @@ class _AdvCameraState extends State<AdvCamera> {
           case CameraPreviewRatio.r16_9:
             selectedPreviewRatio = 9.0 / 16.0;
             if (constraintRatio >= selectedPreviewRatio) {
-              widthTemp = lesser;
-              heightTemp = lesser * 16.0 / 9.0;
+              widthTemp = greater;
+              heightTemp = greater * 16.0 / 9.0;
             } else {
-              heightTemp = greater;
-              widthTemp = greater * 9.0 / 16.0;
+              widthTemp = greater;
+              heightTemp = greater * 16.0 / 9.0;
             }
             break;
           case CameraPreviewRatio.r11_9:
             selectedPreviewRatio = 9.0 / 11.0;
             if (constraintRatio >= selectedPreviewRatio) {
-              widthTemp = lesser;
-              heightTemp = lesser * 11.0 / 9.0;
+              widthTemp = greater;
+              heightTemp = greater * 11.0 / 9.0;
             } else {
-              heightTemp = greater;
-              widthTemp = greater * 9.0 / 11.0;
+              widthTemp = greater;
+              heightTemp = greater * 11.0 / 9.0;
             }
             break;
           case CameraPreviewRatio.r4_3:
             selectedPreviewRatio = 3.0 / 4.0;
             if (constraintRatio >= selectedPreviewRatio) {
-              widthTemp = lesser;
-              heightTemp = lesser * 4.0 / 3.0;
+              widthTemp = greater;
+              heightTemp = greater * 4.0 / 3.0;
             } else {
-              heightTemp = greater;
-              widthTemp = greater * 3.0 / 4.0;
+              widthTemp = greater;
+              heightTemp = greater * 4.0 / 3.0;
             }
             break;
           case CameraPreviewRatio.r1:
             if (constraintRatio >= 1.0) {
-              widthTemp = lesser;
-              heightTemp = lesser;
+              widthTemp = greater;
+              heightTemp = greater;
             } else {
               heightTemp = greater;
               widthTemp = greater;
@@ -234,12 +234,19 @@ class _AdvCameraState extends State<AdvCamera> {
         }
 
         if (Platform.isAndroid) {
-          if (constraints.maxWidth < constraints.maxHeight) {
+          final orientation = MediaQuery.of(context).orientation;
+
+          if (orientation != Orientation.landscape) {
             width = widthTemp;
             height = heightTemp;
           } else {
-            width = heightTemp;
-            height = widthTemp;
+            if (constraints.maxWidth < constraints.maxHeight) {
+              width = widthTemp;
+              height = heightTemp;
+            } else {
+              width = heightTemp;
+              height = widthTemp;
+            }
           }
         } else {
           width = constraints.maxWidth;
@@ -250,6 +257,8 @@ class _AdvCameraState extends State<AdvCamera> {
           child: OverflowBox(
             maxWidth: width,
             maxHeight: height,
+            minHeight: 0,
+            minWidth: 0,
             child: camera,
           ),
           clipper: CustomRect(

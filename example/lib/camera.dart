@@ -15,6 +15,8 @@ class CameraApp extends StatefulWidget {
 class _CameraAppState extends State<CameraApp> {
   List<String> pictureSizes = [];
   String imagePath;
+  double _width = 204;
+  double _height = 250;
 
   @override
   Widget build(BuildContext context) {
@@ -32,15 +34,18 @@ class _CameraAppState extends State<CameraApp> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      buildFlashSettings(context),
-                      Container(
-                        margin: EdgeInsets.symmetric(
-                          horizontal: 16,
-                        ).copyWith(bottom: 16),
-                        height: 1,
-                        width: double.infinity,
-                        color: Colors.grey,
-                      ),
+                      // buildFlashSettings(context),
+                      // Container(
+                      //   margin: EdgeInsets.symmetric(
+                      //     horizontal: 16,
+                      //   ).copyWith(bottom: 16),
+                      //   height: 1,
+                      //   width: double.infinity,
+                      //   color: Colors.grey,
+                      // ),
+                      // buildRatioSettings(context),
+                      // buildRatioSettings(context),
+                      buildSizeSettings(context),
                       buildRatioSettings(context),
                       if (this.pictureSizes.isNotEmpty)
                         Container(
@@ -59,27 +64,30 @@ class _CameraAppState extends State<CameraApp> {
                 Expanded(
                   child: Stack(
                     children: [
-                      AdvCamera(
-                        initialCameraType: CameraType.front,
-                        onCameraCreated: _onCameraCreated,
-                        onImageCaptured: (String path) {
-                          if (this.mounted)
-                            setState(() {
-                              imagePath = path;
-                            });
-                        },
-                        cameraPreviewRatio: CameraPreviewRatio.r16_9,
+                  Center(
+                  child: Container(
+                        height: _height + 16,
+                        width: _width + 16,
+                        color: Colors.green,
+                  ),
+                  ),
+                      Center(
+                        child: Container(
+                          height: _height,
+                          width: _width,
+                          child: AdvCamera(
+                            initialCameraType: CameraType.front,
+                            onCameraCreated: _onCameraCreated,
+                            onImageCaptured: (String path) {
+                              if (this.mounted)
+                                setState(() {
+                                  imagePath = path;
+                                });
+                            },
+                            cameraPreviewRatio: CameraPreviewRatio.r16_9,
+                          ),
+                        ),
                       ),
-                      // Positioned.fill(
-                      //   child: GestureDetector(
-                      //     onTapUp: (TapUpDetails details) => _onTapUp(details),
-                      //     child: Container(
-                      //       width: 1000,
-                      //       color: Colors.green,
-                      //       height: 1000,
-                      //     ),
-                      //   ),
-                      // ),
                     ],
                   ),
                 ),
@@ -230,6 +238,147 @@ class _CameraAppState extends State<CameraApp> {
                     cameraController.setPreviewRatio(CameraPreviewRatio.r16_9);
                     cameraController
                         .setSessionPreset(CameraSessionPreset.photo);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildSizeSettings(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(left: 16),
+          child: Text("Size Setting"),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Container(
+            child: Row(
+              children: [
+                FlatButton(
+                  color: Colors.green,
+                  child: Text("250:204"),
+                  onPressed: () {
+                    setState(() {
+                      _width = 204;
+                      _height = 250;
+                    });
+                  },
+                ),
+                FlatButton(
+                  color: Colors.green,
+                  child: Text("250:205"),
+                  onPressed: () {
+                    setState(() {
+                      _width = 205;
+                      _height = 250;
+                    });
+                  },
+                ),
+                FlatButton(
+                  color: Colors.green,
+                  child: Text("250:140"),
+                  onPressed: () {
+                    setState(() {
+                      _width = 140;
+                      _height = 250;
+                    });
+                  },
+                ),
+                FlatButton(
+                  color: Colors.green,
+                  child: Text("250:141"),
+                  onPressed: () {
+                    setState(() {
+                      _width = 141;
+                      _height = 250;
+                    });
+                  },
+                ),
+                FlatButton(
+                  color: Colors.green,
+                  child: Text("250:187"),
+                  onPressed: () {
+                    setState(() {
+                      _width = 187;
+                      _height = 250;
+                    });
+                  },
+                ),
+                FlatButton(
+                  color: Colors.green,
+                  child: Text("250:188"),
+                  onPressed: () {
+                    setState(() {
+                      _width = 188;
+                      _height = 250;
+                    });
+                  },
+                ),
+                FlatButton(
+                  color: Colors.red,
+                  child: Text("250:204"),
+                  onPressed: () {
+                    setState(() {
+                      _height = 204;
+                      _width = 250;
+                    });
+                  },
+                ),
+                FlatButton(
+                  color: Colors.red,
+                  child: Text("250:205"),
+                  onPressed: () {
+                    setState(() {
+                      _height = 205;
+                      _width = 250;
+                    });
+                  },
+                ),
+                FlatButton(
+                  color: Colors.red,
+                  child: Text("250:140"),
+                  onPressed: () {
+                    setState(() {
+                      _height = 140;
+                      _width = 250;
+                    });
+                  },
+                ),
+                FlatButton(
+                  color: Colors.red,
+                  child: Text("250:141"),
+                  onPressed: () {
+                    setState(() {
+                      _height= 141;
+                      _width  = 250;
+                    });
+                  },
+                ),
+                FlatButton(
+                  color: Colors.red,
+                  child: Text("250:187"),
+                  onPressed: () {
+                    setState(() {
+                      _height = 187;
+                      _width = 250;
+                    });
+                  },
+                ),
+                FlatButton(
+                  color: Colors.red,
+                  child: Text("250:188"),
+                  onPressed: () {
+                    setState(() {
+                      _height = 188;
+                      _width = 250;
+                    });
                   },
                 ),
               ],
