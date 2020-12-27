@@ -5,13 +5,19 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.PixelFormat;
+import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.hardware.Camera;
 import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -64,6 +70,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private boolean disposed = false;
     private final View view;
     private final SurfaceView imgSurface;
+    private SurfaceHolder holderTransparent;
     private final SurfaceHolder surfaceHolder;
     private Camera camera;
     private int cameraFacing = 0;
@@ -80,7 +87,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private Camera.Size pictureSize;
     private String flashType = Camera.Parameters.FLASH_MODE_AUTO;
     private boolean bestPictureSize;
-    private View focusRect;
+    //    private View focusRect;
     private WaitForCameraObject waitForCameraObject;
 
     @SuppressLint({"InflateParams", "ClickableViewAccessibility"})
@@ -96,7 +103,12 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         methodChannel.setMethodCallHandler(this);
         view = registrar.activity().getLayoutInflater().inflate(com.ric.adv_camera.R.layout.activity_camera, null);
         imgSurface = view.findViewById(com.ric.adv_camera.R.id.imgSurface);
-        focusRect = view.findViewById(R.id.focusRect);
+        final SurfaceView x = view.findViewById(R.id.TransparentView);
+        x.setZOrderMediaOverlay(true);
+        holderTransparent = x.getHolder();
+        holderTransparent.setFormat(PixelFormat.TRANSPARENT);
+        holderTransparent.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+
         CameraFragment cameraFragment = (CameraFragment) activity.getFragmentManager().findFragmentById(com.ric.adv_camera.R.id.cameraFragment);
         imgSurface.setFocusable(true);
         imgSurface.setFocusableInTouchMode(true);
@@ -947,14 +959,17 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 aboutToBeRight,
                 aboutToBeBottom);
 
-        Log.d("handleFocus", "aboutToBeLeft => " + aboutToBeLeft);
-        Log.d("handleFocus", "aboutToBeTop => " + aboutToBeTop);
-        Log.d("handleFocus", "aboutToBeRight => " + aboutToBeRight);
-        Log.d("handleFocus", "aboutToBeBottom => " + aboutToBeBottom);
-        this.focusRect.setLeft(touchRect.left);
-        this.focusRect.setTop(touchRect.top);
-        this.focusRect.setRight(touchRect.right);
-        this.focusRect.setBottom(touchRect.bottom);
+//        this.focusRect.setLeft(touchRect.left);
+//        this.focusRect.setTop(touchRect.top);
+//        this.focusRect.setRight(touchRect.right);
+//        this.focusRect.setBottom(touchRect.bottom);
+
+        final float RectLeft = event.getX() - 100;
+        final float RectTop = event.getY() - 100;
+        final float RectRight = event.getX() + 100;
+        final float RectBottom = event.getY() + 100;
+
+        drawFocusRect(RectLeft, RectTop, RectRight, RectBottom, Color.GREEN);
 
         Camera.Parameters parameters = null;
 
@@ -1011,5 +1026,35 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private static String asFraction(long a, long b) {
         long gcm = gcm(a, b);
         return (a / gcm) + ":" + (b / gcm);
+    }
+
+
+    Canvas canvas;
+    Paint paint;
+    Canvas dismissCanvas;
+
+    private void drawFocusRect(float RectLeft, float RectTop, float RectRight, float RectBottom, int color) {
+
+        canvas = holderTransparent.lockCanvas();
+        canvas.drawColor(0, PorterDuff.Mode.CLEAR);
+        //border's properties
+        paint = new Paint();
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setColor(color);
+        paint.setStrokeWidth(3);
+        canvas.drawRect(RectLeft, RectTop, RectRight, RectBottom, paint);
+
+
+        holderTransparent.unlockCanvasAndPost(canvas);
+
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                dismissCanvas = holderTransparent.lockCanvas();
+                dismissCanvas.drawColor(0, PorterDuff.Mode.CLEAR);
+                holderTransparent.unlockCanvasAndPost(dismissCanvas);
+            }
+        }, 2000);
     }
 }

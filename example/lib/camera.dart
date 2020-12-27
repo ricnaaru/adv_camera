@@ -19,46 +19,46 @@ class _CameraAppState extends State<CameraApp> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('AdvCamera Example'),
-      ),
+      // appBar: AppBar(
+      //   title: const Text('AdvCamera Example'),
+      // ),
       body: SafeArea(
         child: Stack(
           children: [
             Column(
               children: [
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      buildFlashSettings(context),
-                      Container(
-                        margin: EdgeInsets.symmetric(
-                          horizontal: 16,
-                        ).copyWith(bottom: 16),
-                        height: 1,
-                        width: double.infinity,
-                        color: Colors.grey,
-                      ),
-                      buildRatioSettings(context),
-                      if (this.pictureSizes.isNotEmpty)
-                        Container(
-                          margin: EdgeInsets.symmetric(
-                            horizontal: 16,
-                          ).copyWith(bottom: 16),
-                          height: 1,
-                          width: double.infinity,
-                          color: Colors.grey,
-                        ),
-                      if (this.pictureSizes.isNotEmpty)
-                        buildImageOutputSettings(context),
-                    ],
-                  ),
-                ),
+                // Padding(
+                //   padding: EdgeInsets.symmetric(vertical: 16),
+                //   child: Column(
+                //     crossAxisAlignment: CrossAxisAlignment.start,
+                //     children: [
+                //       buildFlashSettings(context),
+                //       Container(
+                //         margin: EdgeInsets.symmetric(
+                //           horizontal: 16,
+                //         ).copyWith(bottom: 16),
+                //         height: 1,
+                //         width: double.infinity,
+                //         color: Colors.grey,
+                //       ),
+                //       buildRatioSettings(context),
+                //       if (this.pictureSizes.isNotEmpty)
+                //         Container(
+                //           margin: EdgeInsets.symmetric(
+                //             horizontal: 16,
+                //           ).copyWith(bottom: 16),
+                //           height: 1,
+                //           width: double.infinity,
+                //           color: Colors.grey,
+                //         ),
+                //       if (this.pictureSizes.isNotEmpty)
+                //         buildImageOutputSettings(context),
+                //     ],
+                //   ),
+                // ),
                 Expanded(
                   child: AdvCamera(
-                    initialCameraType: CameraType.front,
+                    initialCameraType: CameraType.rear,
                     onCameraCreated: _onCameraCreated,
                     onImageCaptured: (String path) {
                       if (this.mounted)
@@ -66,46 +66,46 @@ class _CameraAppState extends State<CameraApp> {
                           imagePath = path;
                         });
                     },
-                    cameraPreviewRatio: CameraPreviewRatio.r16_9,
+                    cameraPreviewRatio: CameraPreviewRatio.r11_9,
                   ),
                 ),
               ],
             ),
-            Positioned(
-              bottom: 16.0,
-              left: 16.0,
-              child: imagePath != null
-                  ? Container(
-                      width: 100.0,
-                      height: 100.0,
-                      child: Image.file(File(imagePath)),
-                    )
-                  : Icon(Icons.image),
-            )
+            // Positioned(
+            //   bottom: 16.0,
+            //   left: 16.0,
+            //   child: imagePath != null
+            //       ? Container(
+            //           width: 100.0,
+            //           height: 100.0,
+            //           child: Image.file(File(imagePath)),
+            //         )
+            //       : Icon(Icons.image),
+            // )
           ],
         ),
       ),
-      floatingActionButton: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            heroTag: "switch",
-            child: Icon(Icons.switch_camera),
-            onPressed: () async {
-              await cameraController.switchCamera();
-            },
-          ),
-          Container(height: 16.0),
-          FloatingActionButton(
-            heroTag: "capture",
-            child: Icon(Icons.camera),
-            onPressed: () {
-              cameraController.captureImage();
-            },
-          ),
-        ],
-      ),
+      // floatingActionButton: Column(
+      //   crossAxisAlignment: CrossAxisAlignment.end,
+      //   mainAxisSize: MainAxisSize.min,
+      //   children: [
+      //     FloatingActionButton(
+      //       heroTag: "switch",
+      //       child: Icon(Icons.switch_camera),
+      //       onPressed: () async {
+      //         await cameraController.switchCamera();
+      //       },
+      //     ),
+      //     Container(height: 16.0),
+      //     FloatingActionButton(
+      //       heroTag: "capture",
+      //       child: Icon(Icons.camera),
+      //       onPressed: () {
+      //         cameraController.captureImage();
+      //       },
+      //     ),
+      //   ],
+      // ),
     );
   }
 

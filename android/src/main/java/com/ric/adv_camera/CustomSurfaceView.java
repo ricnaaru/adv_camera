@@ -40,7 +40,7 @@ public class CustomSurfaceView extends SurfaceView {
     @Override
     public void onWindowFocusChanged(boolean hasWindowFocus) {
         super.onWindowFocusChanged(hasWindowFocus);
-        if (hasWindowFocus) {//onresume() called
+        if (hasWindowFocus) {
             Log.d("tag", "onresume() called");
         } else {
             Log.d("tag", "onPause() called");

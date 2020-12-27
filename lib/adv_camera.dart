@@ -179,9 +179,9 @@ class _AdvCameraState extends State<AdvCamera> {
         double height;
 
         if (constraints.maxWidth < constraints.maxHeight) {
-          greater = constraints.maxHeight;
-        } else {
           greater = constraints.maxWidth;
+        } else {
+          greater = constraints.maxHeight;
         }
 
         switch (_cameraPreviewRatio) {
