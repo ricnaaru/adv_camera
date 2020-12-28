@@ -62,6 +62,7 @@ class WaitForCameraObject {
     }
 }
 
+@SuppressWarnings("ALL")
 public class AdvCamera implements MethodChannel.MethodCallHandler,
         PlatformView, SurfaceHolder.Callback {
     private final MethodChannel methodChannel;
@@ -70,7 +71,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private boolean disposed = false;
     private final View view;
     private final SurfaceView imgSurface;
-    private SurfaceHolder holderTransparent;
+    private final SurfaceHolder holderTransparent;
     private final SurfaceHolder surfaceHolder;
     private Camera camera;
     private int cameraFacing = 0;
@@ -208,7 +209,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
         surfaceHolder = imgSurface.getHolder();
         surfaceHolder.addCallback(this);
-        surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+
         jpegCallback = new Camera.PictureCallback() {
             public void onPictureTaken(byte[] data, Camera camera) {
                 camera.stopPreview();
@@ -1057,8 +1058,10 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             public void run() {
                 if (handler.id == lastId) {
                     dismissCanvas = holderTransparent.lockCanvas();
-                    dismissCanvas.drawColor(0, PorterDuff.Mode.CLEAR);
-                    holderTransparent.unlockCanvasAndPost(dismissCanvas);
+                    if (dismissCanvas != null) {
+                        dismissCanvas.drawColor(0, PorterDuff.Mode.CLEAR);
+                        holderTransparent.unlockCanvasAndPost(dismissCanvas);
+                    }
                 }
             }
         }, 2000);
