@@ -14,7 +14,8 @@ class AdvCameraController {
     _AdvCameraState advCameraState,
   ) async {
     assert(id != null);
-    final MethodChannel channel = MethodChannel('plugins.flutter.io/adv_camera/$id');
+    final MethodChannel channel =
+        MethodChannel('plugins.flutter.io/adv_camera/$id');
     // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
     // https://github.com/flutter/flutter/issues/26431
     // ignore: strong_mode_implicit_dynamic_method
@@ -99,7 +100,8 @@ class AdvCameraController {
         break;
     }
 
-    bool success = await channel.invokeMethod('setPreviewRatio', <String, dynamic>{
+    bool success =
+        await channel.invokeMethod('setPreviewRatio', <String, dynamic>{
       'previewRatio': previewRatio,
     });
 
@@ -147,8 +149,8 @@ class AdvCameraController {
     // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
     // https://github.com/flutter/flutter/issues/26431
     // ignore: strong_mode_implicit_dynamic_method
-    await channel
-        .invokeMethod('setPictureSize', {"pictureWidth": width, "pictureHeight": height});
+    await channel.invokeMethod(
+        'setPictureSize', {"pictureWidth": width, "pictureHeight": height});
   }
 
   Future<void> setSavePath(String savePath) async {
@@ -158,6 +160,18 @@ class AdvCameraController {
     if (Platform.isIOS) return;
 
     await channel.invokeMethod('setSavePath', {"savePath": savePath});
+  }
+
+  Future<void> drawFocusRect(
+      double x,
+      double y,
+  ) async {
+    // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
+    // https://github.com/flutter/flutter/issues/26431
+    // ignore: strong_mode_implicit_dynamic_method
+    if (Platform.isIOS) return;
+
+    await channel.invokeMethod('drawFocusRect', {"x": x, "y": y});
   }
 
   Future<void> setFlashType(FlashType flashType) async {

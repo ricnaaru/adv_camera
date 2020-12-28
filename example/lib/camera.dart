@@ -69,7 +69,7 @@ class _CameraAppState extends State<CameraApp> {
                           imagePath = path;
                         });
                     },
-                    cameraPreviewRatio: CameraPreviewRatio.r11_9,
+                    cameraPreviewRatio: CameraPreviewRatio.r16_9,
                   ),
                 ),
               ],

@@ -194,7 +194,11 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 } else {
                     // handle single touch events
                     if (action == MotionEvent.ACTION_UP) {
-                        handleFocus(event);
+                        int pointerId = event.getPointerId(0);
+                        int pointerIndex = event.findPointerIndex(pointerId);
+
+                        // Get the pointer's current position
+                        handleFocus(event.getX(pointerIndex), event.getY(pointerIndex));
                     }
                 }
                 return true;
@@ -423,6 +427,27 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 camera.startPreview();
 
                 result.success(true);
+                break;
+            }
+            case "drawFocusRect": {
+                float x = 0;
+                float y = 0;
+
+                if (methodCall.arguments instanceof HashMap) {
+                    Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
+                    Log.d("ricric", "x => " + params.get("x"));
+                    Log.d("ricric", "y => " + params.get("y"));
+                    x = (float) Float.parseFloat(params.get("x").toString());
+                    y = (float) Float.parseFloat(params.get("y").toString());
+                }
+                final float left = x - 100;
+                final float top = y - 100;
+                final float right = x + 100;
+                final float bottom = y + 100;
+
+//                drawFocusRect(left, top, right, bottom, Color.RED);
+
+                handleFocus(x, y);
                 break;
             }
         }
@@ -901,16 +926,13 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         camera.setParameters(params);
     }
 
-    private void handleFocus(MotionEvent event) {
-        int pointerId = event.getPointerId(0);
-        int pointerIndex = event.findPointerIndex(pointerId);
-        // Get the pointer's current position
+    private void handleFocus(float initialX, float initialY) {
 
         int surfaceHeight = imgSurface.getHeight();
         int surfaceWidth = imgSurface.getWidth();
 
-        float x = event.getY(pointerIndex);
-        float y = surfaceWidth - event.getX(pointerIndex);
+        float x = initialY;
+        float y = surfaceWidth - initialX;
 
         //cancel previous actions
         camera.cancelAutoFocus();
@@ -959,13 +981,13 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 //        this.focusRect.setRight(touchRect.right);
 //        this.focusRect.setBottom(touchRect.bottom);
 
-        final float RectLeft = event.getX() - 100;
-        final float RectTop = event.getY() - 100;
-        final float RectRight = event.getX() + 100;
-        final float RectBottom = event.getY() + 100;
+        final float RectLeft = initialX - 100;
+        final float RectTop = initialY - 100;
+        final float RectRight = initialX + 100;
+        final float RectBottom = initialY + 100;
 
-        Log.d("handleFocus", "event.getX() => " + event.getX());
-        Log.d("handleFocus", "event.getY() => " + event.getY());
+        Log.d("handleFocus", "event.getX() => " + initialX);
+        Log.d("handleFocus", "event.getY() => " + initialY);
         Log.d("handleFocus", "RectLeft => " + RectLeft);
         Log.d("handleFocus", "RectTop => " + RectTop);
         Log.d("handleFocus", "RectRight => " + RectRight);
