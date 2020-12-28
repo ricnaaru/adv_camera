@@ -56,6 +56,9 @@ class _CameraAppState extends State<CameraApp> {
                 //     ],
                 //   ),
                 // ),
+        // D/handleFocus(23032): event.getX() => 1011.74994
+        // D/handleFocus(23032): event.getY() => 1289.25
+        //         1050.75 x 1288.5
                 Expanded(
                   child: AdvCamera(
                     initialCameraType: CameraType.rear,

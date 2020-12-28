@@ -911,9 +911,6 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         float x = event.getY(pointerIndex);
         float y = surfaceWidth - event.getX(pointerIndex);
 
-        Log.d("handleFocus", "x => " + x);
-        Log.d("handleFocus", "y => " + y);
-
         //cancel previous actions
         camera.cancelAutoFocus();
 
@@ -922,9 +919,6 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 (int) (y - 100),
                 (int) (x + 100),
                 (int) (y + 100));
-
-        Log.d("handleFocus", "touch left => " + touchRect.left);
-        Log.d("handleFocus", "touch top => " + touchRect.top);
 
         int aboutToBeLeft = touchRect.left;
         int aboutToBeTop = touchRect.top;
@@ -968,6 +962,13 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         final float RectTop = event.getY() - 100;
         final float RectRight = event.getX() + 100;
         final float RectBottom = event.getY() + 100;
+
+        Log.d("handleFocus", "event.getX() => " + event.getX());
+        Log.d("handleFocus", "event.getY() => " + event.getY());
+        Log.d("handleFocus", "RectLeft => " + RectLeft);
+        Log.d("handleFocus", "RectTop => " + RectTop);
+        Log.d("handleFocus", "RectRight => " + RectRight);
+        Log.d("handleFocus", "RectBottom => " + RectBottom);
 
         drawFocusRect(RectLeft, RectTop, RectRight, RectBottom, Color.GREEN);
 
@@ -1032,6 +1033,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     Canvas canvas;
     Paint paint;
     Canvas dismissCanvas;
+    long lastId;
 
     private void drawFocusRect(float RectLeft, float RectTop, float RectRight, float RectBottom, int color) {
 
@@ -1044,17 +1046,29 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         paint.setStrokeWidth(3);
         canvas.drawRect(RectLeft, RectTop, RectRight, RectBottom, paint);
 
-
         holderTransparent.unlockCanvasAndPost(canvas);
 
-        final Handler handler = new Handler();
+        final long id = System.currentTimeMillis();
+        final DismissHandler handler = new DismissHandler(id);
+        lastId = id;
+
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                dismissCanvas = holderTransparent.lockCanvas();
-                dismissCanvas.drawColor(0, PorterDuff.Mode.CLEAR);
-                holderTransparent.unlockCanvasAndPost(dismissCanvas);
+                if (handler.id == lastId) {
+                    dismissCanvas = holderTransparent.lockCanvas();
+                    dismissCanvas.drawColor(0, PorterDuff.Mode.CLEAR);
+                    holderTransparent.unlockCanvasAndPost(dismissCanvas);
+                }
             }
         }, 2000);
+    }
+}
+
+class DismissHandler extends Handler {
+    long id;
+
+    public DismissHandler(long id) {
+        this.id = id;
     }
 }

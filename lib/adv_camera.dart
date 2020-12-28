@@ -230,6 +230,11 @@ class _AdvCameraState extends State<AdvCamera> {
             minHeight: 0,
             minWidth: 0,
             child: camera,
+            // child: GestureDetector(
+            //   onTapDown: (TapDownDetails details) =>
+            //       onTapDown(context, details),
+            //   child: Container(color: Colors.orange),
+            // ),
           ),
           clipper: CustomRect(
             right: constraints.maxWidth,
@@ -238,6 +243,18 @@ class _AdvCameraState extends State<AdvCamera> {
         );
       },
     );
+  }
+
+  void onTapDown(BuildContext context, TapDownDetails details) {
+    final mq = MediaQuery.of(context).devicePixelRatio;
+    print('${details.localPosition.dx} x ${details.localPosition.dy}');
+    print('${details.localPosition.dx * mq} x ${details.localPosition.dy * mq}');
+    // final RenderBox box = context.findRenderObject();
+    // final Offset localOffset = box.globalToLocal(details.globalPosition);
+    // setState(() {
+    //   posx = localOffset.dx;
+    //   posy = localOffset.dy;
+    // });
   }
 
   Future<void> onPlatformViewCreated(int id) async {
