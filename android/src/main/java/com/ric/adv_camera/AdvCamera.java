@@ -927,12 +927,29 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     }
 
     private void handleFocus(float initialX, float initialY) {
-
+        final int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
         int surfaceHeight = imgSurface.getHeight();
         int surfaceWidth = imgSurface.getWidth();
 
+        /// normal
         float x = initialY;
         float y = surfaceWidth - initialX;
+
+        if (rotation == Surface.ROTATION_90) {
+            /// rotate left
+            final float xPercentage = initialY / surfaceHeight;
+            final float yPercentage = initialX / surfaceWidth;
+            final boolean condition = (xPercentage > .5) == (yPercentage > .5);
+            x = !condition ? (1 - xPercentage) * surfaceHeight : initialY;
+            y = !condition ? (1 - yPercentage) * surfaceWidth : initialX;
+        } else if (rotation == Surface.ROTATION_270) {
+            /// rotate right
+            final float xPercentage = initialY / surfaceHeight;
+            final float yPercentage = initialX / surfaceWidth;
+            final boolean condition = (xPercentage > .5) == (yPercentage > .5);
+            x = condition ? (1 - xPercentage) * surfaceHeight : initialY;
+            y = condition ? (1 - yPercentage) * surfaceWidth : initialX;
+        }
 
         //cancel previous actions
         camera.cancelAutoFocus();
