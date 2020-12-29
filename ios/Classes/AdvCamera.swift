@@ -287,6 +287,30 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                 self.handle()
                 
                 result(nil)
+            } else if call.method == "drawFocusRect" {
+                print("drawFocusRect")
+                if let dict = call.arguments as? [String: Any] {
+                    print("drawFocusRect => \(dict)")
+                    let x = (dict["x"] as? CGFloat)
+                    let y = (dict["y"] as? CGFloat)
+                    
+                    if y != nil && x != nil {
+                        self.setFocus(touchPoint: CGPoint.init(x: x!, y: y!))
+                    }
+//                    if let sessionPreset = (dict["x"] as? String) {
+//                        if (sessionPreset == "low") {
+//                            self.sessionPreset = .low
+//                        } else if (sessionPreset == "medium") {
+//                            self.sessionPreset = .medium
+//                        } else if (sessionPreset == "high") {
+//                            self.sessionPreset = .high
+//                        } else if (sessionPreset == "photo") {
+//                            self.sessionPreset = .photo
+//                        }
+//                    }
+                }
+                
+                result(nil)
             }
         }
         
@@ -339,28 +363,32 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
     }
     
     @objc func handleTap(_ sender: UITapGestureRecognizer? = nil) {
-        let devicePoint: CGPoint = (self.videoPreviewLayer).captureDevicePointConverted(fromLayerPoint: sender!.location(in: sender!.view))
+        let touchPoint:CGPoint = sender!.location(in: sender!.view)
+        
+        setFocus(touchPoint: touchPoint)
+    }
+    
+    func setFocus(touchPoint: CGPoint!) {
+        print("touchPoint => \(touchPoint)")
+        let devicePoint: CGPoint = (self.videoPreviewLayer).captureDevicePointConverted(fromLayerPoint: touchPoint)
         if let device = self.camera {
-            if let sender = sender {
-                let touchPoint:CGPoint = sender.location(in: self.previewView)
-                if let fsquare = self.focusSquare {
-                    fsquare.updatePoint(touchPoint)
-                } else {
-                    self.focusSquare = CameraFocusSquare(touchPoint: touchPoint, borderColor: self.focusRectColor!, borderWidth: self.focusRectSize!
-                    )
-                    self.previewView.addSubview(self.focusSquare!)
-                    self.focusSquare?.setNeedsDisplay()
-                }
-                
-                self.focusSquare?.animateFocusingAction()
+            if let fsquare = self.focusSquare {
+                fsquare.updatePoint(touchPoint)
+            } else {
+                self.focusSquare = CameraFocusSquare(touchPoint: touchPoint, borderColor: self.focusRectColor!, borderWidth: self.focusRectSize!
+                )
+                self.previewView.addSubview(self.focusSquare!)
+                self.focusSquare?.setNeedsDisplay()
             }
+
+            self.focusSquare?.animateFocusingAction()
             
             do {
                 if (device.isFocusPointOfInterestSupported){
                     try device.lockForConfiguration()
-                    
+
                     device.focusPointOfInterest = devicePoint
-                    
+
                     device.focusMode = .autoFocus
                     device.unlockForConfiguration()
                 }

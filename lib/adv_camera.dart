@@ -233,24 +233,12 @@ class _AdvCameraState extends State<AdvCamera> {
 
         return ClipRect(
           child: OverflowBox(
-              maxWidth: width,
-              maxHeight: height,
-              minHeight: 0,
-              minWidth: 0,
-              // child: camera,
-              child: Stack(
-                children: [
-                  camera,
-                  Positioned.fill(
-                    child: GestureDetector(
-                      onTapDown: (details) => onTapDown(context, details),
-                      child: Container(
-                        color: Colors.orange.withOpacity(.1),
-                      ),
-                    ),
-                  )
-                ],
-              )),
+            maxWidth: width,
+            maxHeight: height,
+            minHeight: 0,
+            minWidth: 0,
+            child: camera,
+          ),
           clipper: CustomRect(
             right: constraints.maxWidth,
             bottom: constraints.maxHeight,
@@ -258,21 +246,6 @@ class _AdvCameraState extends State<AdvCamera> {
         );
       },
     );
-  }
-
-  void onTapDown(BuildContext context, TapDownDetails details) {
-    final mq = MediaQuery.of(context).devicePixelRatio;
-    print('${details.localPosition.dx} x ${details.localPosition.dy}');
-    print(
-        '${details.localPosition.dx * mq} x ${details.localPosition.dy * mq}');
-    _controller.drawFocusRect(
-        details.localPosition.dx * mq, details.localPosition.dy * mq);
-    // final RenderBox box = context.findRenderObject();
-    // final Offset localOffset = box.globalToLocal(details.globalPosition);
-    // setState(() {
-    //   posx = localOffset.dx;
-    //   posy = localOffset.dy;
-    // });
   }
 
   Future<void> onPlatformViewCreated(int id) async {
