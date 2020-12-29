@@ -1,3 +1,9 @@
+## 1.3.0
+
+- Add manual focus on controller.setFocus, to programmatically set the focus of camera
+- Provide rectangle size and color for AdvCamera initialization
+- Draw rectangle whenever camera gets focused
+
 ## 1.2.0
 
 - Do some tidy ups
