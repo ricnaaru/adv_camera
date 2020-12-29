@@ -1,3 +1,8 @@
+## 1.3.1+1
+
+- Fix error when null is passed as focusRectColor
+- Tidy ups
+
 ## 1.3.1
 
 - Add checkPermissionAtStartup flag at AdvCamera, to prevent checkPermission at startup

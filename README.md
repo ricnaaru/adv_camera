@@ -3,7 +3,7 @@
   
 This is our custom Camera that enabling you to tap focus, zoom, flashlight.
   
-*Note*: This plugin use [android.hardware.Camera]([https://developer.android.com/guide/topics/media/camera](https://developer.android.com/guide/topics/media/camera)), I have tried to migrate it to [android.hardware.Camera2]([https://developer.android.com/reference/android/hardware/camera2/package-summary](https://developer.android.com/reference/android/hardware/camera2/package-summary)) in development branch, but with lack of understandings I found out so many inconsistency and find it kinda waste of time since Android is developing their new camera [CameraX]([https://developer.android.com/training/camerax](https://developer.android.com/training/camerax)). So until CameraX has released its stable version, I think I will still use this.
+*Note*: This plugin use [android.hardware.Camera](https://developer.android.com/guide/topics/media/camera), I have tried to migrate it to [android.hardware.Camera2]([https://developer.android.com/reference/android/hardware/camera2/package-summary](https://developer.android.com/reference/android/hardware/camera2/package-summary)) in development branch, but with lack of understandings I found out so many inconsistency and find it kinda waste of time since Android is developing their new camera [CameraX]([https://developer.android.com/training/camerax](https://developer.android.com/training/camerax)). So until CameraX has released its stable version, I think I will still use this.
 
 There's still so much feature that I haven't include such as video recording, auto white balance, etc.
 

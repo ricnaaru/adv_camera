@@ -4,7 +4,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:adv_camera/adv_camera_plugin.dart';
-import 'package:adv_camera/lifecycle_handler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -75,7 +74,6 @@ class _AdvCameraState extends State<AdvCamera> {
   CameraSessionPreset _cameraSessionPreset;
   FlashType _flashType;
   bool hasPermission = false;
-  AdvCameraController _controller;
 
   @override
   void initState() {
@@ -155,10 +153,10 @@ class _AdvCameraState extends State<AdvCamera> {
       "flashType": flashType,
       "fileNamePrefix": widget.fileNamePrefix ?? "adv_camera",
       "bestPictureSize": widget.bestPictureSize,
-      "focusRectColorRed": widget.focusRectColor.red,
-      "focusRectColorGreen": widget.focusRectColor.green,
-      "focusRectColorBlue": widget.focusRectColor.blue,
-      "focusRectSize": widget.focusRectSize,
+      "focusRectColorRed": widget.focusRectColor?.red ?? 12,
+      "focusRectColorGreen": widget.focusRectColor?.green ?? 199,
+      "focusRectColorBlue": widget.focusRectColor?.blue ?? 12,
+      "focusRectSize": widget.focusRectSize ?? 100,
       //for first run on Android (because on each device the default picture size is vary, for example MI 8 Lite's default is the lowest resolution)
     };
 
@@ -261,8 +259,6 @@ class _AdvCameraState extends State<AdvCamera> {
     if (widget.onCameraCreated != null) {
       widget.onCameraCreated(controller);
     }
-
-    _controller = controller;
   }
 
   /// @return the greatest common denominator
