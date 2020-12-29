@@ -39,6 +39,8 @@ class AdvCamera extends StatefulWidget {
   final FlashType flashType;
   final bool bestPictureSize;
   final String fileNamePrefix;
+  final Color focusRectColor;
+  final int focusRectSize;
 
   const AdvCamera({
     Key key,
@@ -50,6 +52,8 @@ class AdvCamera extends StatefulWidget {
     this.onCameraCreated,
     this.onImageCaptured,
     this.fileNamePrefix,
+    this.focusRectColor,
+    this.focusRectSize,
   })  : this.initialCameraType = initialCameraType ?? CameraType.rear,
         this.cameraPreviewRatio =
             cameraPreviewRatio ?? CameraPreviewRatio.r16_9,
@@ -147,6 +151,10 @@ class _AdvCameraState extends State<AdvCamera> {
       "flashType": flashType,
       "fileNamePrefix": widget.fileNamePrefix ?? "adv_camera",
       "bestPictureSize": widget.bestPictureSize,
+      "focusRectColorRed": widget.focusRectColor.red,
+      "focusRectColorGreen": widget.focusRectColor.green,
+      "focusRectColorBlue": widget.focusRectColor.blue,
+      "focusRectSize": widget.focusRectSize,
       //for first run on Android (because on each device the default picture size is vary, for example MI 8 Lite's default is the lowest resolution)
     };
 
@@ -229,22 +237,7 @@ class _AdvCameraState extends State<AdvCamera> {
             maxHeight: height,
             minHeight: 0,
             minWidth: 0,
-            child: Stack(
-              children: [
-                camera,
-                Opacity(opacity: .2, child : GestureDetector(
-                  onTapDown: (TapDownDetails details) =>
-                      onTapDown(context, details),
-                  child: Container(color: Colors.orange),
-                ),),
-              ],
-            ),
-            // child: camera,
-            // child: GestureDetector(
-            //   onTapDown: (TapDownDetails details) =>
-            //       onTapDown(context, details),
-            //   child: Container(color: Colors.orange),
-            // ),
+            child: camera,
           ),
           clipper: CustomRect(
             right: constraints.maxWidth,
@@ -260,7 +253,8 @@ class _AdvCameraState extends State<AdvCamera> {
     print('${details.localPosition.dx} x ${details.localPosition.dy}');
     print(
         '${details.localPosition.dx * mq} x ${details.localPosition.dy * mq}');
-    _controller.drawFocusRect(details.localPosition.dx * mq, details.localPosition.dy * mq);
+    _controller.drawFocusRect(
+        details.localPosition.dx * mq, details.localPosition.dy * mq);
     // final RenderBox box = context.findRenderObject();
     // final Offset localOffset = box.globalToLocal(details.globalPosition);
     // setState(() {

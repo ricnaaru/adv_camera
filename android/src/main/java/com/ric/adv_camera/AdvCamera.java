@@ -90,6 +90,8 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private boolean bestPictureSize;
     //    private View focusRect;
     private WaitForCameraObject waitForCameraObject;
+    private int focusRectColor = Color.GREEN;
+    private float focusRectSize = 100f;
 
     @SuppressLint({"InflateParams", "ClickableViewAccessibility"})
     AdvCamera(
@@ -137,6 +139,10 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             Object fileNamePrefix = params.get("fileNamePrefix");
             Object maxSize = params.get("maxSize");
             Object bestPictureSize = params.get("bestPictureSize");
+            Object focusRectColorRed = params.get("focusRectColorRed");
+            Object focusRectColorGreen = params.get("focusRectColorGreen");
+            Object focusRectColorBlue = params.get("focusRectColorBlue");
+            Object focusRectSize = params.get("focusRectSize");
 
             if (initialCamera != null) {
                 if (initialCamera.equals("front")) {
@@ -172,6 +178,17 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
             if (bestPictureSize != null) {
                 this.bestPictureSize = Boolean.parseBoolean(bestPictureSize.toString());
+            }
+
+            if (focusRectColorRed != null && focusRectColorGreen != null && focusRectColorBlue != null) {
+                final int red = Integer.parseInt(focusRectColorRed.toString());
+                final int green = Integer.parseInt(focusRectColorGreen.toString());
+                final int blue = Integer.parseInt(focusRectColorBlue.toString());
+                focusRectColor = Color.rgb(red, green, blue);
+            }
+
+            if (focusRectSize != null) {
+                this.focusRectSize = Float.parseFloat(focusRectSize.toString());
             }
         }
 
@@ -430,8 +447,8 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 break;
             }
             case "drawFocusRect": {
-                float x = 0;
-                float y = 0;
+                float x = 0f;
+                float y = 0f;
 
                 if (methodCall.arguments instanceof HashMap) {
                     Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
@@ -440,10 +457,10 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                     x = (float) Float.parseFloat(params.get("x").toString());
                     y = (float) Float.parseFloat(params.get("y").toString());
                 }
-                final float left = x - 100;
-                final float top = y - 100;
-                final float right = x + 100;
-                final float bottom = y + 100;
+                final float left = x - focusRectSize;
+                final float top = y - focusRectSize;
+                final float right = x + focusRectSize;
+                final float bottom = y + focusRectSize;
 
 //                drawFocusRect(left, top, right, bottom, Color.RED);
 
@@ -959,10 +976,10 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         camera.cancelAutoFocus();
 
         Rect touchRect = new Rect(
-                (int) (x - 100),
-                (int) (y - 100),
-                (int) (x + 100),
-                (int) (y + 100));
+                (int) (x - focusRectSize),
+                (int) (y - focusRectSize),
+                (int) (x + focusRectSize),
+                (int) (y + focusRectSize));
 
         int aboutToBeLeft = touchRect.left;
         int aboutToBeTop = touchRect.top;
@@ -1002,10 +1019,10 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 //        this.focusRect.setRight(touchRect.right);
 //        this.focusRect.setBottom(touchRect.bottom);
 
-        final float RectLeft = initialX - 100;
-        final float RectTop = initialY - 100;
-        final float RectRight = initialX + 100;
-        final float RectBottom = initialY + 100;
+        final float RectLeft = initialX - focusRectSize;
+        final float RectTop = initialY - focusRectSize;
+        final float RectRight = initialX + focusRectSize;
+        final float RectBottom = initialY + focusRectSize;
 
         Log.d("handleFocus", "event.getX() => " + initialX);
         Log.d("handleFocus", "event.getY() => " + initialY);
@@ -1014,7 +1031,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         Log.d("handleFocus", "RectRight => " + RectRight);
         Log.d("handleFocus", "RectBottom => " + RectBottom);
 
-        drawFocusRect(RectLeft, RectTop, RectRight, RectBottom, Color.GREEN);
+        drawFocusRect(RectLeft, RectTop, RectRight, RectBottom, focusRectColor);
 
         Camera.Parameters parameters = null;
 
