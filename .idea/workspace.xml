@@ -8,7 +8,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d3001fd1-bb60-488f-aae6-3fa961c4d4ca" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/android/src/main/java/com/ric/adv_camera/AdvCamera.java" beforeDir="false" afterPath="$PROJECT_DIR$/android/src/main/java/com/ric/adv_camera/AdvCamera.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -64,29 +63,29 @@
       <screen x="0" y="23" width="1440" height="806" />
     </state>
     <state x="184" y="85" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.23.1440.806@0.23.1440.806" timestamp="1608663065332" />
-    <state width="1398" height="205" key="GridCell.Tab.0.bottom" timestamp="1609166100979">
-      <screen x="0" y="23" width="1440" height="804" />
+    <state width="1398" height="205" key="GridCell.Tab.0.bottom" timestamp="1609232721012">
+      <screen x="0" y="23" width="1440" height="806" />
     </state>
     <state width="1398" height="205" key="GridCell.Tab.0.bottom/0.23.1440.804@0.23.1440.804" timestamp="1609166100979" />
-    <state width="1398" height="205" key="GridCell.Tab.0.bottom/0.23.1440.806@0.23.1440.806" timestamp="1608974377510" />
+    <state width="1398" height="205" key="GridCell.Tab.0.bottom/0.23.1440.806@0.23.1440.806" timestamp="1609232721012" />
     <state width="1398" height="205" key="GridCell.Tab.0.bottom/0.23.1440.809@0.23.1440.809" timestamp="1608664371011" />
-    <state width="1398" height="205" key="GridCell.Tab.0.center" timestamp="1609166100978">
-      <screen x="0" y="23" width="1440" height="804" />
+    <state width="1398" height="205" key="GridCell.Tab.0.center" timestamp="1609232721011">
+      <screen x="0" y="23" width="1440" height="806" />
     </state>
     <state width="1398" height="205" key="GridCell.Tab.0.center/0.23.1440.804@0.23.1440.804" timestamp="1609166100978" />
-    <state width="1398" height="205" key="GridCell.Tab.0.center/0.23.1440.806@0.23.1440.806" timestamp="1608974377509" />
+    <state width="1398" height="205" key="GridCell.Tab.0.center/0.23.1440.806@0.23.1440.806" timestamp="1609232721011" />
     <state width="1398" height="205" key="GridCell.Tab.0.center/0.23.1440.809@0.23.1440.809" timestamp="1608664371011" />
-    <state width="1398" height="205" key="GridCell.Tab.0.left" timestamp="1609166100978">
-      <screen x="0" y="23" width="1440" height="804" />
+    <state width="1398" height="205" key="GridCell.Tab.0.left" timestamp="1609232721011">
+      <screen x="0" y="23" width="1440" height="806" />
     </state>
     <state width="1398" height="205" key="GridCell.Tab.0.left/0.23.1440.804@0.23.1440.804" timestamp="1609166100978" />
-    <state width="1398" height="205" key="GridCell.Tab.0.left/0.23.1440.806@0.23.1440.806" timestamp="1608974377509" />
+    <state width="1398" height="205" key="GridCell.Tab.0.left/0.23.1440.806@0.23.1440.806" timestamp="1609232721011" />
     <state width="1398" height="205" key="GridCell.Tab.0.left/0.23.1440.809@0.23.1440.809" timestamp="1608664371011" />
-    <state width="1398" height="205" key="GridCell.Tab.0.right" timestamp="1609166100978">
-      <screen x="0" y="23" width="1440" height="804" />
+    <state width="1398" height="205" key="GridCell.Tab.0.right" timestamp="1609232721012">
+      <screen x="0" y="23" width="1440" height="806" />
     </state>
     <state width="1398" height="205" key="GridCell.Tab.0.right/0.23.1440.804@0.23.1440.804" timestamp="1609166100978" />
-    <state width="1398" height="205" key="GridCell.Tab.0.right/0.23.1440.806@0.23.1440.806" timestamp="1608974377509" />
+    <state width="1398" height="205" key="GridCell.Tab.0.right/0.23.1440.806@0.23.1440.806" timestamp="1609232721012" />
     <state width="1398" height="205" key="GridCell.Tab.0.right/0.23.1440.809@0.23.1440.809" timestamp="1608664371011" />
     <state x="221" y="62" key="SettingsEditor" timestamp="1608663063563">
       <screen x="0" y="23" width="1440" height="806" />

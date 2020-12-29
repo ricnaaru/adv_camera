@@ -452,8 +452,6 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
                 if (methodCall.arguments instanceof HashMap) {
                     Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
-                    Log.d("ricric", "x => " + params.get("x"));
-                    Log.d("ricric", "y => " + params.get("y"));
                     x = (float) Float.parseFloat(params.get("x").toString());
                     y = (float) Float.parseFloat(params.get("y").toString());
                 }
@@ -1023,13 +1021,6 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         final float RectTop = initialY - focusRectSize;
         final float RectRight = initialX + focusRectSize;
         final float RectBottom = initialY + focusRectSize;
-
-        Log.d("handleFocus", "event.getX() => " + initialX);
-        Log.d("handleFocus", "event.getY() => " + initialY);
-        Log.d("handleFocus", "RectLeft => " + RectLeft);
-        Log.d("handleFocus", "RectTop => " + RectTop);
-        Log.d("handleFocus", "RectRight => " + RectRight);
-        Log.d("handleFocus", "RectBottom => " + RectBottom);
 
         drawFocusRect(RectLeft, RectTop, RectRight, RectBottom, focusRectColor);
 
