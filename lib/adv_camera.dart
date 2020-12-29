@@ -41,6 +41,7 @@ class AdvCamera extends StatefulWidget {
   final String fileNamePrefix;
   final Color focusRectColor;
   final int focusRectSize;
+  final bool checkPermissionAtStartup;
 
   const AdvCamera({
     Key key,
@@ -54,6 +55,7 @@ class AdvCamera extends StatefulWidget {
     this.fileNamePrefix,
     this.focusRectColor,
     this.focusRectSize,
+    this.checkPermissionAtStartup = true,
   })  : this.initialCameraType = initialCameraType ?? CameraType.rear,
         this.cameraPreviewRatio =
             cameraPreviewRatio ?? CameraPreviewRatio.r16_9,
@@ -82,12 +84,14 @@ class _AdvCameraState extends State<AdvCamera> {
     _cameraSessionPreset = widget.cameraSessionPreset;
     _flashType = widget.flashType;
 
-    AdvCameraPlugin.checkForPermission().then((value) {
-      if (this.mounted)
-        setState(() {
-          hasPermission = value;
-        });
-    });
+    if (widget.checkPermissionAtStartup) {
+      AdvCameraPlugin.checkForPermission().then((value) {
+        if (this.mounted)
+          setState(() {
+            hasPermission = value;
+          });
+      });
+    }
   }
 
   @override

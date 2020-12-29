@@ -1,3 +1,7 @@
+## 1.3.1
+
+- Add checkPermissionAtStartup flag at AdvCamera, to prevent checkPermission at startup
+
 ## 1.3.0
 
 - Add manual focus on controller.setFocus, to programmatically set the focus of camera
