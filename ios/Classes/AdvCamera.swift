@@ -10,7 +10,7 @@ import AVFoundation
 import CoreMotion
 
 extension FlutterViewController {
-
+    
 }
 
 public class AdvCameraView : NSObject, FlutterPlatformView {
@@ -29,31 +29,46 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
     var maxSize: Int? = nil
     var orientationLast = UIInterfaceOrientation(rawValue: 0)!
     var motionManager: CMMotionManager?
-
+    var focusRectColor: UIColor?
+    var focusRectSize: CGFloat?
+    
+    var focusSquare: CameraFocusSquare?
+    
     var videoPreviewLayer: AVCaptureVideoPreviewLayer!
-
+    
     public func view() -> UIView {
         return previewView
     }
-
+    
     init(_ frame: CGRect, viewId: Int64, args: Any?, with registrar: FlutterPluginRegistrar) {
         self.previewView = BoundsObservableView(frame: frame)
-
+        
         captureSession = AVCaptureSession()
         _channel = FlutterMethodChannel(name: "plugins.flutter.io/adv_camera/\(viewId)", binaryMessenger: registrar.messenger())
         stillImageOutput = AVCaptureStillImageOutput()
-
+        
         super.init()
-
+        
         NotificationCenter.default.addObserver(self, selector: #selector(onResume), name:
-        UIApplication.willEnterForegroundNotification, object: nil)
-
+                                                UIApplication.willEnterForegroundNotification, object: nil)
+        
         NotificationCenter.default.addObserver(self, selector: #selector(orientationChanged), name:  Notification.Name("UIDeviceOrientationDidChangeNotification"), object: nil)
-
+        
         if let dict = args as? [String: Any] {
+            let focusRectColorRed = (dict["focusRectColorRed"] as? CGFloat)
+            let focusRectColorGreen = (dict["focusRectColorGreen"] as? CGFloat)
+            let focusRectColorBlue = (dict["focusRectColorBlue"] as? CGFloat)
+            let focusRectSize = (dict["focusRectSize"] as? CGFloat)
+            self.focusRectSize = focusRectSize
+            let red: CGFloat! = (focusRectColorRed ?? 12) / 255
+            let green: CGFloat! = (focusRectColorGreen ?? 199) / 255
+            let blue: CGFloat! = (focusRectColorBlue ?? 12) / 255
+            
+            self.focusRectColor = UIColor.init(red: red, green: green, blue: blue, alpha: 255)
+            
             let fileNamePrefix: String = (dict["fileNamePrefix"] as? String)!
             self.fileNamePrefix = fileNamePrefix
-
+            
             let sessionPreset: String = (dict["sessionPreset"] as? String)!
             if (sessionPreset == "photo") {
                 self.sessionPreset = .photo
@@ -64,9 +79,9 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
             } else if (sessionPreset == "low") {
                 self.sessionPreset = .low
             }
-
+            
             let initialCameraType = (dict["initialCameraType"] as? String)!
-
+            
             let videoDevices = AVCaptureDevice.devices(for: AVMediaType.video)
             for device in videoDevices {
                 if (initialCameraType == "front") {
@@ -81,7 +96,7 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                     }
                 }
             }
-
+            
             let flashType = (dict["flashType"] as? String)!
             if (flashType == "auto") {
                 if let camera = self.camera {
@@ -113,10 +128,10 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                     self.flashType = .on
                 }
             }
-
+            
             let maxSize = (dict["maxSize"] as? Int)
             self.maxSize = maxSize
-
+            
             if let camera = self.camera {
                 if (camera.hasTorch) {
                     do {
@@ -124,18 +139,18 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                     } catch {
                         print("Could not lock camera")
                     }
-
-                   camera.flashMode = self.flashType
+                    
+                    camera.flashMode = self.flashType
                     camera.torchMode = self.torchType
                 }
-
+                
                 // unlock your device
                 camera.unlockForConfiguration()
             }
         }
-
+        
         handle()
-
+        
         motionManager = CMMotionManager()
         motionManager?.accelerometerUpdateInterval = 0.2
         motionManager?.gyroUpdateInterval = 0.2
@@ -147,7 +162,7 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                 print("\(error!)")
             }
         })
-
+        
         _channel.setMethodCallHandler { call, result in
             if call.method == "waitForCamera" {
                 result(nil)
@@ -183,7 +198,7 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                 result(flashTypes)
             } else if call.method == "turnOff" {
                 self.captureSession.stopRunning()
-
+                
                 result(nil)
             } else if call.method == "switchCamera" {
                 let videoDevices = AVCaptureDevice.devices(for: AVMediaType.video)
@@ -200,9 +215,9 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                         }
                     }
                 }
-
+                
                 self.handle()
-
+                
                 result(nil)
             } else if call.method == "setFlashType" {
                 if let dict = call.arguments as? [String: Any] {
@@ -236,23 +251,23 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                             }
                         }
                     }
-
+                    
                     if (self.camera!.hasTorch) {
                         do {
                             try self.camera!.lockForConfiguration()
                         } catch {
                             print("Could not lock camera")
                         }
-
+                        
                         self.camera!.flashMode = self.flashType
                         self.camera!.torchMode = self.torchType
                     }
-
+                    
                     // unlock your device
                     self.camera!.unlockForConfiguration()
-
+                    
                 }
-
+                
                 result(nil)
             } else if call.method == "setSessionPreset" {
                 if let dict = call.arguments as? [String: Any] {
@@ -268,27 +283,27 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                         }
                     }
                 }
-
+                
                 self.handle()
-
+                
                 result(nil)
             }
         }
-
+        
         let tap = UITapGestureRecognizer(target: self, action: #selector(self.handleTap(_:)))
         let pinchRecognizer = UIPinchGestureRecognizer(target: self, action:#selector(self.pinch(_:)))
         self.previewView.addGestureRecognizer(pinchRecognizer)
         self.previewView.addGestureRecognizer(tap)
         self.previewView.backgroundColor = UIColor.black.withAlphaComponent(0.3)
     }
-
+    
     @objc func onResume() {
         setupLivePreview()
     }
-
+    
     func outputAccelertionData(_ acceleration: CMAcceleration) {
         var orientationNew: UIInterfaceOrientation
-
+        
         if acceleration.x >= 0.75 {
             orientationNew = .landscapeLeft
         } else if acceleration.x <= -0.75 {
@@ -301,17 +316,17 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
             // Consider same as last time
             return
         }
-
+        
         if orientationNew == orientationLast {
             return
         }
-
+        
         orientationLast = orientationNew
     }
-
+    
     @objc func orientationChanged() {
         let orientation: UIInterfaceOrientation = UIApplication.shared.keyWindow?.rootViewController?.preferredInterfaceOrientationForPresentation ?? UIInterfaceOrientation.portrait
-
+        
         if orientation == UIInterfaceOrientation.landscapeLeft {
             if (self.previewView.previousOrientation == UIInterfaceOrientation.landscapeRight) {
                 self.previewView.setNeedsLayout()
@@ -322,16 +337,30 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
             }
         }
     }
-
+    
     @objc func handleTap(_ sender: UITapGestureRecognizer? = nil) {
         let devicePoint: CGPoint = (self.videoPreviewLayer).captureDevicePointConverted(fromLayerPoint: sender!.location(in: sender!.view))
         if let device = self.camera {
+            if let sender = sender {
+                let touchPoint:CGPoint = sender.location(in: self.previewView)
+                if let fsquare = self.focusSquare {
+                    fsquare.updatePoint(touchPoint)
+                } else {
+                    self.focusSquare = CameraFocusSquare(touchPoint: touchPoint, borderColor: self.focusRectColor!, borderWidth: self.focusRectSize!
+                    )
+                    self.previewView.addSubview(self.focusSquare!)
+                    self.focusSquare?.setNeedsDisplay()
+                }
+                
+                self.focusSquare?.animateFocusingAction()
+            }
+            
             do {
                 if (device.isFocusPointOfInterestSupported){
                     try device.lockForConfiguration()
-
+                    
                     device.focusPointOfInterest = devicePoint
-
+                    
                     device.focusMode = .autoFocus
                     device.unlockForConfiguration()
                 }
@@ -340,15 +369,15 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
             }
         }
     }
-
+    
     @objc func pinch(_ pinch: UIPinchGestureRecognizer) {
         guard let device = self.camera else { return }
-
+        
         // Return zoom value between the minimum and maximum zoom values
         func minMaxZoom(_ factor: CGFloat) -> CGFloat {
             return min(min(max(factor, minimumZoom), maximumZoom), device.activeFormat.videoMaxZoomFactor)
         }
-
+        
         func update(scale factor: CGFloat) {
             do {
                 try device.lockForConfiguration()
@@ -358,9 +387,9 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                 print("\(error.localizedDescription)")
             }
         }
-
+        
         let newScaleFactor = minMaxZoom(pinch.scale * lastZoomFactor)
-
+        
         switch pinch.state {
         case .began: fallthrough
         case .changed: update(scale: newScaleFactor)
@@ -370,7 +399,7 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
         default: break
         }
     }
-
+    
     private func handle() {
         captureSession = AVCaptureSession()
         stillImageOutput = AVCaptureStillImageOutput()
@@ -378,7 +407,7 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
         do {
             if let camera = self.camera {
                 let input = try AVCaptureDeviceInput(device: camera)
-
+                
                 if captureSession.canAddInput(input) && captureSession.canAddOutput(stillImageOutput) {
                     captureSession.addInput(input)
                     captureSession.addOutput(stillImageOutput)
@@ -389,13 +418,13 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
             print("Error Unable to initialize back camera:  \(error.localizedDescription)")
         }
     }
-
+    
     func setupLivePreview() {
         videoPreviewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-
+        
         videoPreviewLayer.videoGravity = .resizeAspectFill
         let orientation: UIInterfaceOrientation = UIApplication.shared.keyWindow?.rootViewController?.preferredInterfaceOrientationForPresentation ?? UIInterfaceOrientation.portrait
-
+        
         if orientation == UIInterfaceOrientation.landscapeLeft {
             videoPreviewLayer.connection?.videoOrientation = .landscapeLeft
         } else if orientation == UIInterfaceOrientation.landscapeRight {
@@ -405,37 +434,37 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
         } else if orientation == UIInterfaceOrientation.portraitUpsideDown {
             videoPreviewLayer.connection?.videoOrientation = .portraitUpsideDown
         }
-
+        
         previewView.previousOrientation = orientation
         previewView.videoPreviewLayer = videoPreviewLayer
         previewView.layer.addSublayer(videoPreviewLayer)
-
+        
         DispatchQueue.global(qos: .userInitiated).async { //[weak self] in
             self.captureSession.startRunning()
-
+            
             //this 500ms delay is necessary because without this, the screen will be grey for the first time
             // somehow the first time running is faster than the getView from FlutterNativeView function
             let seconds = 0.5
             DispatchQueue.main.asyncAfter(deadline: .now() + seconds) {
                 self.videoPreviewLayer.frame = self.previewView.bounds
-
+                
                 if (self.camera!.hasTorch) {
                     do {
                         try self.camera!.lockForConfiguration()
                     } catch {
                         print("Could not lock camera")
                     }
-
+                    
                     self.camera!.flashMode = self.flashType
                     self.camera!.torchMode = self.torchType
                 }
-
+                
                 // unlock your device
                 self.camera!.unlockForConfiguration()
             }
         }
     }
-
+    
     func rotateImage(image: UIImage) -> UIImage? {
         if self.camera?.position == .front {
             if self.orientationLast == UIInterfaceOrientation.landscapeRight {
@@ -458,10 +487,10 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                 return UIImage(cgImage: image.cgImage!, scale: 1.0, orientation: .left)
             }
         }
-
+        
         return image
     }
-
+    
     func saveToCamera() {
         if let videoConnection = stillImageOutput.connection(with: AVMediaType.video) {
             stillImageOutput.captureStillImageAsynchronously(from: videoConnection) {
@@ -471,7 +500,7 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                     let imageData = AVCaptureStillImageOutput.jpegStillImageNSDataRepresentation(imageDataSampleBuffer)
                     let imageTemp: UIImage = UIImage(data: imageData!)!
                     let result: Bool = self.saveImage(image: imageTemp)
-
+                    
                     if (!result) {
                         print("Image save error!")
                     }
@@ -482,7 +511,7 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
             }
         }
     }
-
+    
     func saveImage(image: UIImage) -> Bool {
         autoreleasepool {
             let rotatedImage = rotateImage(image: image)!
@@ -493,13 +522,13 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
             guard let directory = try? FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false) as NSURL else {
                 return false
             }
-
+            
             let timestamp = NSDate().timeIntervalSince1970
             let myTimeInterval = TimeInterval(timestamp)
             let time = NSDate(timeIntervalSince1970: TimeInterval(myTimeInterval))
             let dateFormatterGet = DateFormatter()
             dateFormatterGet.dateFormat = "yyyyMMdd_HHmmss"
-
+            
             let fileURL = directory.appendingPathComponent("\(self.fileNamePrefix)_\(dateFormatterGet.string(from: time as Date)).jpg")
             if !FileManager.default.fileExists(atPath: fileURL!.path) {
                 FileManager.default.createFile(atPath: fileURL!.path, contents: data, attributes: nil)
@@ -510,15 +539,15 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                     print(error.localizedDescription)
                 }
             }
-
+            
             var dict: [String: String] = [String:String]()
-
+            
             dict["path"] = fileURL?.path
             _channel.invokeMethod("onImageCaptured", arguments: dict)
             return true
         }
     }
-
+    
     func resizeImage(image: UIImage) -> UIImage? {
         if (self.maxSize == nil) {
             return image
@@ -530,7 +559,7 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
         image.draw(in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
         let newImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
-
+        
         return newImage
     }
 }
@@ -543,16 +572,16 @@ public protocol ViewBoundsObserving: class {
 
 /// You can observe bounds change with this view subclass via `ViewBoundsObserving` delegate.
 public class BoundsObservableView: UIView {
-
+    
     public weak var boundsDelegate: ViewBoundsObserving?
-
+    
     private var previousBounds: CGRect = .zero
     var previousOrientation: UIInterfaceOrientation?
     var videoPreviewLayer: AVCaptureVideoPreviewLayer!
-
+    
     public override func layoutSubviews() {
         let orientation: UIInterfaceOrientation = UIApplication.shared.keyWindow?.rootViewController?.preferredInterfaceOrientationForPresentation ?? UIInterfaceOrientation.portrait
-
+        
         if (orientation != previousOrientation) {
             boundsDelegate?.boundsDidChange(self, from: previousBounds)
             previousBounds = bounds
@@ -567,12 +596,12 @@ public class BoundsObservableView: UIView {
                     connection.videoOrientation = .portraitUpsideDown
                 }
             }
-
+            
             if let leyer = self.videoPreviewLayer {
                 DispatchQueue.main.async {
                     leyer.frame = self.bounds//.offsetBy(dx: 0, dy: -20)
                 }
-
+                
             }
         }
         

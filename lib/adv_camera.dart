@@ -233,12 +233,24 @@ class _AdvCameraState extends State<AdvCamera> {
 
         return ClipRect(
           child: OverflowBox(
-            maxWidth: width,
-            maxHeight: height,
-            minHeight: 0,
-            minWidth: 0,
-            child: camera,
-          ),
+              maxWidth: width,
+              maxHeight: height,
+              minHeight: 0,
+              minWidth: 0,
+              // child: camera,
+              child: Stack(
+                children: [
+                  camera,
+                  Positioned.fill(
+                    child: GestureDetector(
+                      onTapDown: (details) => onTapDown(context, details),
+                      child: Container(
+                        color: Colors.orange.withOpacity(.1),
+                      ),
+                    ),
+                  )
+                ],
+              )),
           clipper: CustomRect(
             right: constraints.maxWidth,
             bottom: constraints.maxHeight,
