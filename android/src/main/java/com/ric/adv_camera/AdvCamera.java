@@ -446,7 +446,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 result.success(true);
                 break;
             }
-            case "drawFocusRect": {
+            case "setFocus": {
                 float x = 0f;
                 float y = 0f;
 
@@ -455,12 +455,6 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                     x = (float) Float.parseFloat(params.get("x").toString());
                     y = (float) Float.parseFloat(params.get("y").toString());
                 }
-                final float left = x - focusRectSize;
-                final float top = y - focusRectSize;
-                final float right = x + focusRectSize;
-                final float bottom = y + focusRectSize;
-
-//                drawFocusRect(left, top, right, bottom, Color.RED);
 
                 handleFocus(x, y);
                 break;
@@ -1022,7 +1016,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         final float RectRight = initialX + focusRectSize;
         final float RectBottom = initialY + focusRectSize;
 
-        drawFocusRect(RectLeft, RectTop, RectRight, RectBottom, focusRectColor);
+        setFocus(RectLeft, RectTop, RectRight, RectBottom, focusRectColor);
 
         Camera.Parameters parameters = null;
 
@@ -1087,7 +1081,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     Canvas dismissCanvas;
     long lastId;
 
-    private void drawFocusRect(float RectLeft, float RectTop, float RectRight, float RectBottom, int color) {
+    private void setFocus(float RectLeft, float RectTop, float RectRight, float RectBottom, int color) {
 
         canvas = holderTransparent.lockCanvas();
         canvas.drawColor(0, PorterDuff.Mode.CLEAR);

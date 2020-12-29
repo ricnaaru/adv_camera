@@ -287,10 +287,8 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                 self.handle()
                 
                 result(nil)
-            } else if call.method == "drawFocusRect" {
-                print("drawFocusRect")
+            } else if call.method == "setFocus" {
                 if let dict = call.arguments as? [String: Any] {
-                    print("drawFocusRect => \(dict)")
                     let x = (dict["x"] as? CGFloat)
                     let y = (dict["y"] as? CGFloat)
                     

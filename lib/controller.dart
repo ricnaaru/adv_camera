@@ -162,14 +162,14 @@ class AdvCameraController {
     await channel.invokeMethod('setSavePath', {"savePath": savePath});
   }
 
-  Future<void> drawFocusRect(
+  Future<void> setFocus(
       double x,
       double y,
   ) async {
     // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
     // https://github.com/flutter/flutter/issues/26431
     // ignore: strong_mode_implicit_dynamic_method
-    await channel.invokeMethod('drawFocusRect', {"x": x, "y": y});
+    await channel.invokeMethod('setFocus', {"x": x, "y": y});
   }
 
   Future<void> setFlashType(FlashType flashType) async {
