@@ -936,6 +936,8 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         float y = surfaceWidth - initialX;
 
         if (rotation == Surface.ROTATION_90) {
+            /// for this rotation, we have to swap upper right corner to bottom left corner
+            /// the rest, bottom right and upper left, will still be the same
             /// rotate left
             final float xPercentage = initialY / surfaceHeight;
             final float yPercentage = initialX / surfaceWidth;
@@ -943,6 +945,8 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             x = !condition ? (1 - xPercentage) * surfaceHeight : initialY;
             y = !condition ? (1 - yPercentage) * surfaceWidth : initialX;
         } else if (rotation == Surface.ROTATION_270) {
+            /// for this rotation, we have to swap upper left corner to bottom right corner
+            /// the rest, bottom left and upper right, will still be the same
             /// rotate right
             final float xPercentage = initialY / surfaceHeight;
             final float yPercentage = initialX / surfaceWidth;

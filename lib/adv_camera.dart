@@ -232,11 +232,11 @@ class _AdvCameraState extends State<AdvCamera> {
             child: Stack(
               children: [
                 camera,
-                // Opacity(opacity: .2, child : GestureDetector(
-                //   onTapDown: (TapDownDetails details) =>
-                //       onTapDown(context, details),
-                //   child: Container(color: Colors.orange),
-                // ),),
+                Opacity(opacity: .2, child : GestureDetector(
+                  onTapDown: (TapDownDetails details) =>
+                      onTapDown(context, details),
+                  child: Container(color: Colors.orange),
+                ),),
               ],
             ),
             // child: camera,

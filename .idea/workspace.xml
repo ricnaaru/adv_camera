@@ -8,12 +8,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d3001fd1-bb60-488f-aae6-3fa961c4d4ca" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/android/src/main/java/com/ric/adv_camera/AdvCamera.java" beforeDir="false" afterPath="$PROJECT_DIR$/android/src/main/java/com/ric/adv_camera/AdvCamera.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/.flutter-plugins-dependencies" beforeDir="false" afterPath="$PROJECT_DIR$/example/.flutter-plugins-dependencies" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/ios/.symlinks/plugins/adv_camera/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/example/ios/.symlinks/plugins/adv_camera/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/ios/.symlinks/plugins/adv_camera/android/src/main/java/com/ric/adv_camera/AdvCamera.java" beforeDir="false" afterPath="$PROJECT_DIR$/example/ios/.symlinks/plugins/adv_camera/android/src/main/java/com/ric/adv_camera/AdvCamera.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/ios/.symlinks/plugins/adv_camera/example/.flutter-plugins-dependencies" beforeDir="false" afterPath="$PROJECT_DIR$/example/ios/.symlinks/plugins/adv_camera/example/.flutter-plugins-dependencies" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/adv_camera.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/adv_camera.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
