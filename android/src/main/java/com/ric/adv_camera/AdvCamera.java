@@ -1,18 +1,23 @@
 package com.ric.adv_camera;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.PixelFormat;
+import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.hardware.Camera;
 import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -23,12 +28,6 @@ import android.view.SurfaceView;
 import android.view.View;
 
 import androidx.annotation.NonNull;
-
-import com.karumi.dexter.Dexter;
-import com.karumi.dexter.MultiplePermissionsReport;
-import com.karumi.dexter.PermissionToken;
-import com.karumi.dexter.listener.PermissionRequest;
-import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -51,19 +50,33 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.platform.PlatformView;
 
+class WaitForCameraObject {
+    MethodChannel.Result o;
+
+    public WaitForCameraObject(MethodChannel.Result o) {
+        this.o = o;
+    }
+
+    public void notifyCameraSet() {
+        o.success(true);
+    }
+}
+
+@SuppressWarnings("ALL")
 public class AdvCamera implements MethodChannel.MethodCallHandler,
         PlatformView, SurfaceHolder.Callback {
     private final MethodChannel methodChannel;
     private final Context context;
     private final Activity activity;
     private boolean disposed = false;
-    private View view;
-    private SurfaceView imgSurface;
-    private SurfaceHolder surfaceHolder;
+    private final View view;
+    private final SurfaceView imgSurface;
+    private final SurfaceHolder holderTransparent;
+    private final SurfaceHolder surfaceHolder;
     private Camera camera;
     private int cameraFacing = 0;
     private SavePicTask savePicTask;
-    private Camera.PictureCallback jpegCallback;
+    private final Camera.PictureCallback jpegCallback;
     private File folder;
     private Integer maxSize;
     private String savePath;
@@ -75,7 +88,12 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private Camera.Size pictureSize;
     private String flashType = Camera.Parameters.FLASH_MODE_AUTO;
     private boolean bestPictureSize;
+    //    private View focusRect;
+    private WaitForCameraObject waitForCameraObject;
+    private int focusRectColor = Color.GREEN;
+    private float focusRectSize = 100f;
 
+    @SuppressLint({"InflateParams", "ClickableViewAccessibility"})
     AdvCamera(
             int id,
             final Context context,
@@ -88,15 +106,21 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         methodChannel.setMethodCallHandler(this);
         view = registrar.activity().getLayoutInflater().inflate(com.ric.adv_camera.R.layout.activity_camera, null);
         imgSurface = view.findViewById(com.ric.adv_camera.R.id.imgSurface);
-        com.ric.adv_camera.CameraFragment cameraFragment = (com.ric.adv_camera.CameraFragment) activity.getFragmentManager().findFragmentById(com.ric.adv_camera.R.id.cameraFragment);
+        final SurfaceView x = view.findViewById(R.id.TransparentView);
+        x.setZOrderMediaOverlay(true);
+        holderTransparent = x.getHolder();
+        holderTransparent.setFormat(PixelFormat.TRANSPARENT);
+        holderTransparent.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+
+        CameraFragment cameraFragment = (CameraFragment) activity.getFragmentManager().findFragmentById(com.ric.adv_camera.R.id.cameraFragment);
         imgSurface.setFocusable(true);
         imgSurface.setFocusableInTouchMode(true);
 
-        cameraFragment.listener = new com.ric.adv_camera.FragmentLifecycleListener() {
+        cameraFragment.listener = new FragmentLifecycleListener() {
             @Override
             public void onPause() {
                 if (camera != null)
-                camera.stopPreview();
+                    camera.stopPreview();
             }
 
             @Override
@@ -115,6 +139,10 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             Object fileNamePrefix = params.get("fileNamePrefix");
             Object maxSize = params.get("maxSize");
             Object bestPictureSize = params.get("bestPictureSize");
+            Object focusRectColorRed = params.get("focusRectColorRed");
+            Object focusRectColorGreen = params.get("focusRectColorGreen");
+            Object focusRectColorBlue = params.get("focusRectColorBlue");
+            Object focusRectSize = params.get("focusRectSize");
 
             if (initialCamera != null) {
                 if (initialCamera.equals("front")) {
@@ -149,7 +177,18 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             }
 
             if (bestPictureSize != null) {
-                this.bestPictureSize = Boolean.valueOf(bestPictureSize.toString());
+                this.bestPictureSize = Boolean.parseBoolean(bestPictureSize.toString());
+            }
+
+            if (focusRectColorRed != null && focusRectColorGreen != null && focusRectColorBlue != null) {
+                final int red = Integer.parseInt(focusRectColorRed.toString());
+                final int green = Integer.parseInt(focusRectColorGreen.toString());
+                final int blue = Integer.parseInt(focusRectColorBlue.toString());
+                focusRectColor = Color.rgb(red, green, blue);
+            }
+
+            if (focusRectSize != null) {
+                this.focusRectSize = Float.parseFloat(focusRectSize.toString());
             }
         }
 
@@ -172,7 +211,11 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 } else {
                     // handle single touch events
                     if (action == MotionEvent.ACTION_UP) {
-                        handleFocus(event);
+                        int pointerId = event.getPointerId(0);
+                        int pointerIndex = event.findPointerIndex(pointerId);
+
+                        // Get the pointer's current position
+                        handleFocus(event.getX(pointerIndex), event.getY(pointerIndex));
                     }
                 }
                 return true;
@@ -187,7 +230,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
         surfaceHolder = imgSurface.getHolder();
         surfaceHolder.addCallback(this);
-        surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+
         jpegCallback = new Camera.PictureCallback() {
             public void onPictureTaken(byte[] data, Camera camera) {
                 camera.stopPreview();
@@ -209,7 +252,10 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     public void onMethodCall(MethodCall methodCall, @NonNull MethodChannel.Result result) {
         switch (methodCall.method) {
             case "waitForCamera":
-                result.success(null);
+                if (camera == null)
+                    waitForCameraObject = new WaitForCameraObject(result);
+                else
+                    result.success(true);
                 break;
             case "turnOff":
                 camera.stopPreview();
@@ -400,6 +446,19 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 result.success(true);
                 break;
             }
+            case "setFocus": {
+                float x = 0f;
+                float y = 0f;
+
+                if (methodCall.arguments instanceof HashMap) {
+                    Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
+                    x = (float) Float.parseFloat(params.get("x").toString());
+                    y = (float) Float.parseFloat(params.get("y").toString());
+                }
+
+                handleFocus(x, y);
+                break;
+            }
         }
     }
 
@@ -416,7 +475,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         disposed = true;
         methodChannel.setMethodCallHandler(null);
 
-        com.ric.adv_camera.CameraFragment f = (com.ric.adv_camera.CameraFragment) activity.getFragmentManager()
+        CameraFragment f = (CameraFragment) activity.getFragmentManager()
                 .findFragmentById(com.ric.adv_camera.R.id.cameraFragment);
         if (f != null) {
             activity.getFragmentManager().beginTransaction().remove(f).commit();
@@ -438,6 +497,11 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         } catch (RuntimeException e) {
             e.printStackTrace();
             return;
+        }
+
+        if (waitForCameraObject != null) {
+            waitForCameraObject.notifyCameraSet();
+            waitForCameraObject = null;
         }
 
         try {
@@ -483,9 +547,9 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             }
             param.setFocusMode(focusMode);
 
+            /// I block this script because Xiaomi 4a and Huawei gets rotated because of this
             int orientation = setCameraDisplayOrientation(0);
-
-//            param.setRotation(orientation); //dicomment karena kmaren itu hp xiaomi 4a dan huawei ke-rotate
+//            param.setRotation(orientation);
 
             try {
                 camera.setParameters(param);
@@ -509,8 +573,6 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 result = "on";
             }
         }
-
-        Log.d("ricric", "modes => " + supportedModes);
 
         if (supportedModes != null && !supportedModes.contains(result)) {
             if (supportedModes.size() > 0) {
@@ -623,8 +685,8 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
     @SuppressLint("StaticFieldLeak")
     private class SavePicTask extends AsyncTask<Void, Void, String> {
-        private byte[] data;
-        private int rotation;
+        private final byte[] data;
+        private final int rotation;
 
         SavePicTask(byte[] data, int rotation) {
             this.data = data;
@@ -670,9 +732,9 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             int reqHeight = metrics.heightPixels;
             int reqWidth = metrics.widthPixels;
             // Fix for exporting image with correct resolution in landscape mode
-            if(reqWidth > reqHeight){
-            reqHeight = metrics.widthPixels;
-            reqWidth = metrics.heightPixels;
+            if (reqWidth > reqHeight) {
+                reqHeight = metrics.widthPixels;
+                reqWidth = metrics.heightPixels;
             }
 
 //            // Fix for exporting image with correct resolution in landscape mode
@@ -873,24 +935,43 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         camera.setParameters(params);
     }
 
-    private void handleFocus(MotionEvent event) {
-        int pointerId = event.getPointerId(0);
-        int pointerIndex = event.findPointerIndex(pointerId);
-        // Get the pointer's current position
+    private void handleFocus(float initialX, float initialY) {
+        final int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+        int surfaceHeight = imgSurface.getHeight();
+        int surfaceWidth = imgSurface.getWidth();
 
-        int xxw = imgSurface.getHeight();
-        int xxh = imgSurface.getWidth();
-        float x = event.getY(pointerIndex);
-        float y = xxh - event.getX(pointerIndex);
+        /// normal
+        float x = initialY;
+        float y = surfaceWidth - initialX;
+
+        if (rotation == Surface.ROTATION_90) {
+            /// for this rotation, we have to swap upper right corner to bottom left corner
+            /// the rest, bottom right and upper left, will still be the same
+            /// rotate left
+            final float xPercentage = initialY / surfaceHeight;
+            final float yPercentage = initialX / surfaceWidth;
+            final boolean condition = (xPercentage > .5) == (yPercentage > .5);
+            x = !condition ? (1 - xPercentage) * surfaceHeight : initialY;
+            y = !condition ? (1 - yPercentage) * surfaceWidth : initialX;
+        } else if (rotation == Surface.ROTATION_270) {
+            /// for this rotation, we have to swap upper left corner to bottom right corner
+            /// the rest, bottom left and upper right, will still be the same
+            /// rotate right
+            final float xPercentage = initialY / surfaceHeight;
+            final float yPercentage = initialX / surfaceWidth;
+            final boolean condition = (xPercentage > .5) == (yPercentage > .5);
+            x = condition ? (1 - xPercentage) * surfaceHeight : initialY;
+            y = condition ? (1 - yPercentage) * surfaceWidth : initialX;
+        }
 
         //cancel previous actions
         camera.cancelAutoFocus();
 
         Rect touchRect = new Rect(
-                (int) (x - 100),
-                (int) (y - 100),
-                (int) (x + 100),
-                (int) (y + 100));
+                (int) (x - focusRectSize),
+                (int) (y - focusRectSize),
+                (int) (x + focusRectSize),
+                (int) (y + focusRectSize));
 
         int aboutToBeLeft = touchRect.left;
         int aboutToBeTop = touchRect.top;
@@ -905,25 +986,37 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             aboutToBeTop = 0;
             aboutToBeBottom = 200;
         }
-        if (aboutToBeRight > xxw) {
-            aboutToBeRight = xxw;
-            aboutToBeLeft = xxw - 200;
+        if (aboutToBeRight > surfaceHeight) {
+            aboutToBeRight = surfaceHeight;
+            aboutToBeLeft = surfaceHeight - 200;
         }
-        if (aboutToBeBottom > xxh) {
-            aboutToBeBottom = xxh;
-            aboutToBeTop = xxh - 200;
+        if (aboutToBeBottom > surfaceWidth) {
+            aboutToBeBottom = surfaceWidth;
+            aboutToBeTop = surfaceWidth - 200;
         }
 
-        aboutToBeLeft = aboutToBeLeft * 2000 / xxw - 1000;
-        aboutToBeTop = aboutToBeTop * 2000 / xxh - 1000;
-        aboutToBeRight = aboutToBeRight * 2000 / xxw - 1000;
-        aboutToBeBottom = aboutToBeBottom * 2000 / xxh - 1000;
+        aboutToBeLeft = aboutToBeLeft * 2000 / surfaceHeight - 1000;
+        aboutToBeTop = aboutToBeTop * 2000 / surfaceWidth - 1000;
+        aboutToBeRight = aboutToBeRight * 2000 / surfaceHeight - 1000;
+        aboutToBeBottom = aboutToBeBottom * 2000 / surfaceWidth - 1000;
 
         Rect focusRect = new Rect(
                 aboutToBeLeft,
                 aboutToBeTop,
                 aboutToBeRight,
                 aboutToBeBottom);
+
+//        this.focusRect.setLeft(touchRect.left);
+//        this.focusRect.setTop(touchRect.top);
+//        this.focusRect.setRight(touchRect.right);
+//        this.focusRect.setBottom(touchRect.bottom);
+
+        final float RectLeft = initialX - focusRectSize;
+        final float RectTop = initialY - focusRectSize;
+        final float RectRight = initialX + focusRectSize;
+        final float RectBottom = initialY + focusRectSize;
+
+        setFocus(RectLeft, RectTop, RectRight, RectBottom, focusRectColor);
 
         Camera.Parameters parameters = null;
 
@@ -947,7 +1040,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 }
             }
             parameters.setFocusMode(focusMode);
-            if (focusMode == Camera.Parameters.FOCUS_MODE_AUTO)
+            if (focusMode.equals(Camera.Parameters.FOCUS_MODE_AUTO))
                 parameters.setFocusAreas(mylist2);
 
             try {
@@ -958,7 +1051,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                     }
                 });
             } catch (Exception e) {
-                Log.e("error", "lalalalalala=> " + e);
+                Log.e("error", "error => " + e);
             }
         }
     }
@@ -981,8 +1074,49 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         long gcm = gcm(a, b);
         return (a / gcm) + ":" + (b / gcm);
     }
+
+
+    Canvas canvas;
+    Paint paint;
+    Canvas dismissCanvas;
+    long lastId;
+
+    private void setFocus(float RectLeft, float RectTop, float RectRight, float RectBottom, int color) {
+
+        canvas = holderTransparent.lockCanvas();
+        canvas.drawColor(0, PorterDuff.Mode.CLEAR);
+        //border's properties
+        paint = new Paint();
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setColor(color);
+        paint.setStrokeWidth(3);
+        canvas.drawRect(RectLeft, RectTop, RectRight, RectBottom, paint);
+
+        holderTransparent.unlockCanvasAndPost(canvas);
+
+        final long id = System.currentTimeMillis();
+        final DismissHandler handler = new DismissHandler(id);
+        lastId = id;
+
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (handler.id == lastId) {
+                    dismissCanvas = holderTransparent.lockCanvas();
+                    if (dismissCanvas != null) {
+                        dismissCanvas.drawColor(0, PorterDuff.Mode.CLEAR);
+                        holderTransparent.unlockCanvasAndPost(dismissCanvas);
+                    }
+                }
+            }
+        }, 2000);
+    }
 }
 
-interface CustomMultiplePermissionsListener {
-    void onPermissionsChecked(MultiplePermissionsReport report);
+class DismissHandler extends Handler {
+    long id;
+
+    public DismissHandler(long id) {
+        this.id = id;
+    }
 }

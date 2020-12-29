@@ -39,6 +39,8 @@ class AdvCamera extends StatefulWidget {
   final FlashType flashType;
   final bool bestPictureSize;
   final String fileNamePrefix;
+  final Color focusRectColor;
+  final int focusRectSize;
 
   const AdvCamera({
     Key key,
@@ -50,6 +52,8 @@ class AdvCamera extends StatefulWidget {
     this.onCameraCreated,
     this.onImageCaptured,
     this.fileNamePrefix,
+    this.focusRectColor,
+    this.focusRectSize,
   })  : this.initialCameraType = initialCameraType ?? CameraType.rear,
         this.cameraPreviewRatio =
             cameraPreviewRatio ?? CameraPreviewRatio.r16_9,
@@ -147,6 +151,10 @@ class _AdvCameraState extends State<AdvCamera> {
       "flashType": flashType,
       "fileNamePrefix": widget.fileNamePrefix ?? "adv_camera",
       "bestPictureSize": widget.bestPictureSize,
+      "focusRectColorRed": widget.focusRectColor.red,
+      "focusRectColorGreen": widget.focusRectColor.green,
+      "focusRectColorBlue": widget.focusRectColor.blue,
+      "focusRectSize": widget.focusRectSize,
       //for first run on Android (because on each device the default picture size is vary, for example MI 8 Lite's default is the lowest resolution)
     };
 
@@ -172,74 +180,51 @@ class _AdvCameraState extends State<AdvCamera> {
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        double lesser;
         double greater;
         double widthTemp;
         double heightTemp;
         double width;
         double height;
-        double selectedPreviewRatio;
-        double constraintRatio;
 
         if (constraints.maxWidth < constraints.maxHeight) {
-          greater = constraints.maxHeight;
-          lesser = constraints.maxWidth;
-          constraintRatio = constraints.maxWidth / constraints.maxHeight;
-        } else {
           greater = constraints.maxWidth;
-          lesser = constraints.maxHeight;
-          constraintRatio = constraints.maxHeight / constraints.maxWidth;
+        } else {
+          greater = constraints.maxHeight;
         }
 
         switch (_cameraPreviewRatio) {
           case CameraPreviewRatio.r16_9:
-            selectedPreviewRatio = 9.0 / 16.0;
-            if (constraintRatio >= selectedPreviewRatio) {
-              widthTemp = lesser;
-              heightTemp = lesser * 16.0 / 9.0;
-            } else {
-              heightTemp = greater;
-              widthTemp = greater * 9.0 / 16.0;
-            }
+            widthTemp = greater;
+            heightTemp = greater * 16.0 / 9.0;
             break;
           case CameraPreviewRatio.r11_9:
-            selectedPreviewRatio = 9.0 / 11.0;
-            if (constraintRatio >= selectedPreviewRatio) {
-              widthTemp = lesser;
-              heightTemp = lesser * 11.0 / 9.0;
-            } else {
-              heightTemp = greater;
-              widthTemp = greater * 9.0 / 11.0;
-            }
+            widthTemp = greater;
+            heightTemp = greater * 11.0 / 9.0;
             break;
           case CameraPreviewRatio.r4_3:
-            selectedPreviewRatio = 3.0 / 4.0;
-            if (constraintRatio >= selectedPreviewRatio) {
-              widthTemp = lesser;
-              heightTemp = lesser * 4.0 / 3.0;
-            } else {
-              heightTemp = greater;
-              widthTemp = greater * 3.0 / 4.0;
-            }
+            widthTemp = greater;
+            heightTemp = greater * 4.0 / 3.0;
             break;
           case CameraPreviewRatio.r1:
-            if (constraintRatio >= 1.0) {
-              widthTemp = lesser;
-              heightTemp = lesser;
-            } else {
-              heightTemp = greater;
-              widthTemp = greater;
-            }
+            widthTemp = greater;
+            heightTemp = greater;
             break;
         }
 
         if (Platform.isAndroid) {
-          if (constraints.maxWidth < constraints.maxHeight) {
+          final orientation = MediaQuery.of(context).orientation;
+
+          if (orientation != Orientation.landscape) {
             width = widthTemp;
             height = heightTemp;
           } else {
-            width = heightTemp;
-            height = widthTemp;
+            if (constraints.maxWidth < constraints.maxHeight) {
+              width = widthTemp;
+              height = heightTemp;
+            } else {
+              width = heightTemp;
+              height = widthTemp;
+            }
           }
         } else {
           width = constraints.maxWidth;
@@ -250,6 +235,8 @@ class _AdvCameraState extends State<AdvCamera> {
           child: OverflowBox(
             maxWidth: width,
             maxHeight: height,
+            minHeight: 0,
+            minWidth: 0,
             child: camera,
           ),
           clipper: CustomRect(
