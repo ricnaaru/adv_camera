@@ -73,7 +73,7 @@ class _AdvCameraState extends State<AdvCamera> {
   CameraPreviewRatio _cameraPreviewRatio;
   CameraSessionPreset _cameraSessionPreset;
   FlashType _flashType;
-  bool hasPermission = false;
+  bool _hasPermission = false;
 
   @override
   void initState() {
@@ -83,12 +83,7 @@ class _AdvCameraState extends State<AdvCamera> {
     _flashType = widget.flashType;
 
     if (widget.checkPermissionAtStartup) {
-      AdvCameraPlugin.checkForPermission().then((value) {
-        if (this.mounted)
-          setState(() {
-            hasPermission = value;
-          });
-      });
+      AdvCameraPlugin.checkForPermission().then((value) => updatePermissionsState(value));
     }
   }
 
@@ -98,7 +93,7 @@ class _AdvCameraState extends State<AdvCamera> {
     String sessionPreset;
     String flashType;
 
-    if (!hasPermission) return Center(child: CircularProgressIndicator());
+    if (!_hasPermission) return Center(child: CircularProgressIndicator());
 
     switch (_flashType) {
       case FlashType.on:
@@ -274,6 +269,14 @@ class _AdvCameraState extends State<AdvCamera> {
   void onImageCaptured(String path) {
     if (widget.onImageCaptured != null) {
       widget.onImageCaptured(path);
+    }
+  }
+
+  void updatePermissionsState(bool value) {
+    if (this.mounted) {
+      setState(() {
+        _hasPermission = value;
+      });
     }
   }
 }

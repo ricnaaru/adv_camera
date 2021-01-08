@@ -220,6 +220,10 @@ class AdvCameraController {
     return finalTypes;
   }
 
+  void grantPermissions() {
+    _advCameraState.updatePermissionsState(true);
+  }
+
 //  Future<void> changeCamera() async {
 //    // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
 //    // https://github.com/flutter/flutter/issues/26431
