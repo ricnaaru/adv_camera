@@ -98,7 +98,7 @@ class _AdvCameraState extends State<AdvCamera> {
     String sessionPreset;
     String flashType;
 
-    if (!hasPermission) return Center(child: CircularProgressIndicator());
+    if (widget.checkPermissionAtStartup && !hasPermission) return Center(child: CircularProgressIndicator());
 
     switch (_flashType) {
       case FlashType.on:
