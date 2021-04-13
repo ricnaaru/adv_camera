@@ -1,6 +1,4 @@
-import 'dart:io';
 
-import 'package:adv_camera/adv_camera.dart';
 import 'package:adv_camera_example/camera.dart';
 import 'package:flutter/material.dart';
 
@@ -12,7 +10,7 @@ void main() {
 class MyApp extends StatefulWidget {
   final String id;
 
-  const MyApp({Key key, this.id}) : super(key: key);
+  const MyApp({Key? key, required this.id}) : super(key: key);
 
   @override
   _MyAppState createState() => _MyAppState();

@@ -1,3 +1,8 @@
+## 2.0.0-nullsafety
+
+- Migrate to Null Safety
+- Add Ignore Permission for Camera
+
 ## 1.3.1+1
 
 - Fix error when null is passed as focusRectColor

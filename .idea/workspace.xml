@@ -26,19 +26,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d3001fd1-bb60-488f-aae6-3fa961c4d4ca" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/adv_camera.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/adv_camera.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/src/main/java/com/ric/adv_camera/AdvCamera.java" beforeDir="false" afterPath="$PROJECT_DIR$/android/src/main/java/com/ric/adv_camera/AdvCamera.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/src/main/java/com/ric/adv_camera/AdvCameraFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/android/src/main/java/com/ric/adv_camera/AdvCameraFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/src/main/java/com/ric/adv_camera/AdvCameraPlugin.java" beforeDir="false" afterPath="$PROJECT_DIR$/android/src/main/java/com/ric/adv_camera/AdvCameraPlugin.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/example/.flutter-plugins-dependencies" beforeDir="false" afterPath="$PROJECT_DIR$/example/.flutter-plugins-dependencies" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/ios/Flutter/flutter_export_environment.sh" beforeDir="false" afterPath="$PROJECT_DIR$/example/ios/Flutter/flutter_export_environment.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/example/pubspec.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/adv_camera.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/adv_camera.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/controller.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/controller.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/lifecycle_handler.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/lifecycle_handler.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/lib/camera.dart" beforeDir="false" afterPath="$PROJECT_DIR$/example/lib/camera.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/example/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/example/pubspec.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -74,10 +72,10 @@
     <property name="dart.analysis.tool.window.visible" value="false" />
     <property name="io.flutter.reload.alreadyRun" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="project.structure.last.edited" value="Project" />
+    <property name="project.structure.last.edited" value="Modules" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.2" />
-    <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
+    <property name="settings.editor.selected.configurable" value="flutter.settings" />
     <property name="show.migrate.to.gradle.popup" value="false" />
   </component>
   <component name="SvnConfiguration">
@@ -106,18 +104,46 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="1374" y="180" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1618317629907">
+    <state x="1400" y="102" key="#Project_Structure" timestamp="1618320811824">
       <screen x="0" y="0" width="2560" height="1040" />
     </state>
-    <state x="1374" y="180" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.2560.1040@0.0.2560.1040" timestamp="1618317629907" />
+    <state x="1400" y="102" key="#Project_Structure/0.0.2560.1040@0.0.2560.1040" timestamp="1618320811824" />
+    <state x="1374" y="180" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1618320968490">
+      <screen x="0" y="0" width="2560" height="1040" />
+    </state>
+    <state x="1374" y="180" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.2560.1040@0.0.2560.1040" timestamp="1618320968490" />
+    <state x="1612" y="245" key="#example/lib/main.dart" timestamp="1618320824602">
+      <screen x="0" y="0" width="2560" height="1040" />
+    </state>
+    <state x="1612" y="245" key="#example/lib/main.dart/0.0.2560.1040@0.0.2560.1040" timestamp="1618320824602" />
     <state x="1373" y="105" width="1094" height="840" key="AVDManager" timestamp="1618320246349">
       <screen x="0" y="0" width="2560" height="1040" />
     </state>
     <state x="1373" y="105" width="1094" height="840" key="AVDManager/0.0.2560.1040@0.0.2560.1040" timestamp="1618320246349" />
-    <state x="1400" y="99" key="SettingsEditor" timestamp="1618320515675">
+    <state x="1739" y="274" key="AndroidProcessChooserDialog" timestamp="1618320801640">
       <screen x="0" y="0" width="2560" height="1040" />
     </state>
-    <state x="1400" y="99" key="SettingsEditor/0.0.2560.1040@0.0.2560.1040" timestamp="1618320515675" />
+    <state x="1739" y="274" key="AndroidProcessChooserDialog/0.0.2560.1040@0.0.2560.1040" timestamp="1618320801640" />
+    <state width="1234" height="277" key="GridCell.Tab.0.bottom" timestamp="1618323020999">
+      <screen x="0" y="0" width="2560" height="1040" />
+    </state>
+    <state width="1234" height="277" key="GridCell.Tab.0.bottom/0.0.2560.1040@0.0.2560.1040" timestamp="1618323020999" />
+    <state width="1234" height="277" key="GridCell.Tab.0.center" timestamp="1618323020999">
+      <screen x="0" y="0" width="2560" height="1040" />
+    </state>
+    <state width="1234" height="277" key="GridCell.Tab.0.center/0.0.2560.1040@0.0.2560.1040" timestamp="1618323020999" />
+    <state width="1234" height="277" key="GridCell.Tab.0.left" timestamp="1618323020999">
+      <screen x="0" y="0" width="2560" height="1040" />
+    </state>
+    <state width="1234" height="277" key="GridCell.Tab.0.left/0.0.2560.1040@0.0.2560.1040" timestamp="1618323020999" />
+    <state width="1234" height="277" key="GridCell.Tab.0.right" timestamp="1618323020999">
+      <screen x="0" y="0" width="2560" height="1040" />
+    </state>
+    <state width="1234" height="277" key="GridCell.Tab.0.right/0.0.2560.1040@0.0.2560.1040" timestamp="1618323020999" />
+    <state x="1400" y="99" key="SettingsEditor" timestamp="1618321010883">
+      <screen x="0" y="0" width="2560" height="1040" />
+    </state>
+    <state x="1400" y="99" key="SettingsEditor/0.0.2560.1040@0.0.2560.1040" timestamp="1618321010883" />
     <state x="1627" y="258" width="585" height="534" key="find.popup" timestamp="1618320503858">
       <screen x="0" y="0" width="2560" height="1040" />
     </state>
