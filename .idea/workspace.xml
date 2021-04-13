@@ -26,17 +26,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d3001fd1-bb60-488f-aae6-3fa961c4d4ca" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/adv_camera.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/android/src/main/java/com/ric/adv_camera/AdvCamera.java" beforeDir="false" afterPath="$PROJECT_DIR$/android/src/main/java/com/ric/adv_camera/AdvCamera.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/android/src/main/java/com/ric/adv_camera/AdvCameraFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/android/src/main/java/com/ric/adv_camera/AdvCameraFactory.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/android/src/main/java/com/ric/adv_camera/AdvCameraPlugin.java" beforeDir="false" afterPath="$PROJECT_DIR$/android/src/main/java/com/ric/adv_camera/AdvCameraPlugin.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/.flutter-plugins-dependencies" beforeDir="false" afterPath="$PROJECT_DIR$/example/.flutter-plugins-dependencies" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/lib/camera.dart" beforeDir="false" afterPath="$PROJECT_DIR$/example/lib/camera.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/example/lib/main.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/example/pubspec.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/adv_camera.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/adv_camera.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -144,10 +135,10 @@
       <screen x="0" y="0" width="2560" height="1040" />
     </state>
     <state x="1400" y="99" key="SettingsEditor/0.0.2560.1040@0.0.2560.1040" timestamp="1618321010883" />
-    <state x="1627" y="258" width="585" height="534" key="find.popup" timestamp="1618320503858">
+    <state x="1627" y="258" width="585" height="534" key="find.popup" timestamp="1618343065576">
       <screen x="0" y="0" width="2560" height="1040" />
     </state>
-    <state x="1627" y="258" width="585" height="534" key="find.popup/0.0.2560.1040@0.0.2560.1040" timestamp="1618320503858" />
+    <state x="1627" y="258" width="585" height="534" key="find.popup/0.0.2560.1040@0.0.2560.1040" timestamp="1618343065576" />
     <state x="1576" y="245" key="run.anything.popup" timestamp="1618313000713">
       <screen x="0" y="0" width="2560" height="1040" />
     </state>

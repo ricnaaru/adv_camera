@@ -1,3 +1,7 @@
+## 2.0.0+1-nullsafety
+
+- Add SavePath and MaxSize parameter on constructor
+
 ## 2.0.0-nullsafety
 
 - Migrate to Null Safety

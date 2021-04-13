@@ -31,6 +31,8 @@ class AdvCamera extends StatefulWidget {
   final Color? focusRectColor;
   final int? focusRectSize;
   final bool ignorePermission;
+  final String? savePath;
+  final int? maxSize;
 
   const AdvCamera({
     Key? key,
@@ -45,6 +47,8 @@ class AdvCamera extends StatefulWidget {
     this.focusRectColor,
     this.focusRectSize,
     this.ignorePermission = false,
+    this.savePath,
+    this.maxSize,
   })  : this.initialCameraType = initialCameraType,
         this.cameraPreviewRatio = cameraPreviewRatio,
         this.cameraSessionPreset = cameraSessionPreset,
@@ -81,7 +85,8 @@ class _AdvCameraState extends State<AdvCamera> {
     String sessionPreset;
     String flashType;
 
-    if (!_hasPermission && !widget.ignorePermission) return Center(child: CircularProgressIndicator());
+    if (!_hasPermission && !widget.ignorePermission)
+      return Center(child: CircularProgressIndicator());
 
     switch (_flashType) {
       case FlashType.on:
@@ -131,10 +136,12 @@ class _AdvCameraState extends State<AdvCamera> {
     final Map<String, dynamic> creationParams = <String, dynamic>{
       "initialCameraType":
           widget.initialCameraType == CameraType.rear ? "rear" : "front",
-      "previewRatio": previewRatio,
-      "sessionPreset": sessionPreset,
       "flashType": flashType,
+      "savePath": widget.savePath,
+      "previewRatio": previewRatio,
       "fileNamePrefix": widget.fileNamePrefix ?? "adv_camera",
+      "maxSize": widget.maxSize,
+      "sessionPreset": sessionPreset,
       "bestPictureSize": widget.bestPictureSize,
       "focusRectColorRed": widget.focusRectColor?.red ?? 12,
       "focusRectColorGreen": widget.focusRectColor?.green ?? 199,
@@ -261,10 +268,10 @@ class _AdvCameraState extends State<AdvCamera> {
   }
 
   FutureOr setPermission(bool value) {
-      if (this.mounted)
-        setState(() {
-          _hasPermission = value;
-        });
+    if (this.mounted)
+      setState(() {
+        _hasPermission = value;
+      });
   }
 }
 
