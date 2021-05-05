@@ -198,8 +198,8 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                 result(flashTypes)
             } else if call.method == "turnOff" {
                 self.captureSession.stopRunning()
-                self.previewView.removeFromSuperLayer()
-                self.previewView = nil
+                self.previewView.videoPreviewLayer.removeFromSuperlayer()
+                self.previewView.videoPreviewLayer = nil
                 self.captureSession = nil
                 
                 result(nil)
