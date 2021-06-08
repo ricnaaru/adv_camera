@@ -119,8 +119,10 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         cameraFragment.listener = new FragmentLifecycleListener() {
             @Override
             public void onPause() {
-                if (camera != null)
+                if (camera != null) {
                     camera.stopPreview();
+                    camera.release();
+                }
             }
 
             @Override
@@ -259,6 +261,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 break;
             case "turnOff":
                 camera.stopPreview();
+                camera.release();
                 result.success(null);
                 break;
             case "setPreviewRatio": {
