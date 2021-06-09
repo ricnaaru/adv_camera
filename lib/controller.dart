@@ -116,6 +116,10 @@ class AdvCameraController {
     await channel.invokeMethod('turnOff', null);
   }
 
+  Future<void> turnOnCamera() async {
+    await channel.invokeMethod('turnOn', null);
+  }
+
   Future<List<String>?> getPictureSizes() async {
     var result = await channel.invokeMethod('getPictureSizes', null);
 

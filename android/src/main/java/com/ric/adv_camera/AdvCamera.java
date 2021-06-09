@@ -100,6 +100,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             PluginRegistry.Registrar registrar, Object args) {
         this.context = context;
         this.activity = registrar.activity();
+        Log.d("ricric", "id => " + id);
 
         methodChannel =
                 new MethodChannel(registrar.messenger(), "plugins.flutter.io/adv_camera/" + id);
@@ -122,6 +123,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 if (camera != null) {
                     camera.stopPreview();
                     camera.release();
+                    camera = null;
                 }
             }
 
@@ -252,6 +254,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
     @Override
     public void onMethodCall(MethodCall methodCall, @NonNull MethodChannel.Result result) {
+        Log.d("ricric", "methodCall.method => " + methodCall.method);
         switch (methodCall.method) {
             case "waitForCamera":
                 if (camera == null)
@@ -260,8 +263,15 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                     result.success(true);
                 break;
             case "turnOff":
-                camera.stopPreview();
-                camera.release();
+                if (camera != null) {
+                    camera.stopPreview();
+                    camera.release();
+                    camera = null;
+                }
+                result.success(null);
+                break;
+            case "turnOn":
+                setupCamera();
                 result.success(null);
                 break;
             case "setPreviewRatio": {
@@ -598,9 +608,11 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         try {
-            camera.stopPreview();
-            camera.release();
-            camera = null;
+            if (camera != null) {
+                camera.stopPreview();
+                camera.release();
+                camera = null;
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

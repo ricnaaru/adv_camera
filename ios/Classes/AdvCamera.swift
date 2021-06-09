@@ -203,6 +203,10 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                 self.captureSession = nil
                 
                 result(nil)
+            } else if call.method == "turnOn" {
+                setupLivePreview()
+
+                result(nil)
             } else if call.method == "switchCamera" {
                 let videoDevices = AVCaptureDevice.devices(for: AVMediaType.video)
                 for device in videoDevices {
