@@ -27,11 +27,13 @@
   <component name="ChangeListManager">
     <list default="true" id="d3001fd1-bb60-488f-aae6-3fa961c4d4ca" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/android/build.gradle" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/android/src/main/java/com/ric/adv_camera/AdvCamera.java" beforeDir="false" afterPath="$PROJECT_DIR$/android/src/main/java/com/ric/adv_camera/AdvCamera.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/src/main/res/layout/activity_camera.xml" beforeDir="false" afterPath="$PROJECT_DIR$/android/src/main/res/layout/activity_camera.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/example/.flutter-plugins-dependencies" beforeDir="false" afterPath="$PROJECT_DIR$/example/.flutter-plugins-dependencies" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/android/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/example/android/app/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/android/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/example/android/app/src/main/AndroidManifest.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/example/lib/camera.dart" beforeDir="false" afterPath="$PROJECT_DIR$/example/lib/camera.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ios/Classes/AdvCamera.swift" beforeDir="false" afterPath="$PROJECT_DIR$/ios/Classes/AdvCamera.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/controller.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/controller.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -123,22 +125,22 @@
       <screen x="0" y="0" width="2560" height="1040" />
     </state>
     <state x="1739" y="274" key="AndroidProcessChooserDialog/0.0.2560.1040@0.0.2560.1040" timestamp="1618320801640" />
-    <state width="1234" height="277" key="GridCell.Tab.0.bottom" timestamp="1623236223124">
+    <state width="1234" height="277" key="GridCell.Tab.0.bottom" timestamp="1623249954383">
       <screen x="0" y="0" width="2560" height="1040" />
     </state>
-    <state width="1234" height="277" key="GridCell.Tab.0.bottom/0.0.2560.1040@0.0.2560.1040" timestamp="1623236223124" />
-    <state width="1234" height="277" key="GridCell.Tab.0.center" timestamp="1623236223124">
+    <state width="1234" height="277" key="GridCell.Tab.0.bottom/0.0.2560.1040@0.0.2560.1040" timestamp="1623249954383" />
+    <state width="1234" height="277" key="GridCell.Tab.0.center" timestamp="1623249954383">
       <screen x="0" y="0" width="2560" height="1040" />
     </state>
-    <state width="1234" height="277" key="GridCell.Tab.0.center/0.0.2560.1040@0.0.2560.1040" timestamp="1623236223124" />
-    <state width="1234" height="277" key="GridCell.Tab.0.left" timestamp="1623236223124">
+    <state width="1234" height="277" key="GridCell.Tab.0.center/0.0.2560.1040@0.0.2560.1040" timestamp="1623249954383" />
+    <state width="1234" height="277" key="GridCell.Tab.0.left" timestamp="1623249954383">
       <screen x="0" y="0" width="2560" height="1040" />
     </state>
-    <state width="1234" height="277" key="GridCell.Tab.0.left/0.0.2560.1040@0.0.2560.1040" timestamp="1623236223124" />
-    <state width="1234" height="277" key="GridCell.Tab.0.right" timestamp="1623236223124">
+    <state width="1234" height="277" key="GridCell.Tab.0.left/0.0.2560.1040@0.0.2560.1040" timestamp="1623249954383" />
+    <state width="1234" height="277" key="GridCell.Tab.0.right" timestamp="1623249954383">
       <screen x="0" y="0" width="2560" height="1040" />
     </state>
-    <state width="1234" height="277" key="GridCell.Tab.0.right/0.0.2560.1040@0.0.2560.1040" timestamp="1623236223124" />
+    <state width="1234" height="277" key="GridCell.Tab.0.right/0.0.2560.1040@0.0.2560.1040" timestamp="1623249954383" />
     <state x="1400" y="99" key="SettingsEditor" timestamp="1618321010883">
       <screen x="0" y="0" width="2560" height="1040" />
     </state>

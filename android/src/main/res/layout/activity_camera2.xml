@@ -5,14 +5,10 @@
     android:background="@android:color/black"
     android:orientation="vertical">
 
-    <FrameLayout
+    <fragment
+        android:name="com.ric.adv_camera.CameraFragment"
+        android:id="@+id/cameraFragment"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/container">
-        <androidx.camera.view.PreviewView
-            android:id="@+id/previewView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
-    </FrameLayout>
+        android:layout_height="match_parent" />
 
 </FrameLayout>

@@ -87,53 +87,53 @@ class _CameraAppState extends State<CameraApp> {
           ],
         ),
       ),
-      floatingActionButton: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            heroTag: "GoToNextPage",
-            child: Icon(Icons.navigate_next),
-            onPressed: () async {
-              await cameraController!.turnOffCamera();
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (BuildContext context) {
-                    return Scaffold(
-                      appBar: AppBar(title: Text("Next Page")),
-                      body: Center(
-                        child: Text(
-                          "You can use the flashlight here because even though the camera is still running in the background, I turned it off",
-                          textAlign: TextAlign.center,
-
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              );
-              await cameraController!.turnOnCamera();
-            },
-          ),
-          Container(height: 16.0),
-          FloatingActionButton(
-            heroTag: "switch",
-            child: Icon(Icons.switch_camera),
-            onPressed: () async {
-              await cameraController!.switchCamera();
-            },
-          ),
-          Container(height: 16.0),
-          FloatingActionButton(
-            heroTag: "capture",
-            child: Icon(Icons.camera),
-            onPressed: () {
-              cameraController!.captureImage();
-            },
-          ),
-        ],
-      ),
+      // floatingActionButton: Column(
+      //   crossAxisAlignment: CrossAxisAlignment.end,
+      //   mainAxisSize: MainAxisSize.min,
+      //   children: [
+      //     FloatingActionButton(
+      //       heroTag: "GoToNextPage",
+      //       child: Icon(Icons.navigate_next),
+      //       onPressed: () async {
+      //         await cameraController!.turnOffCamera();
+      //         await Navigator.push(
+      //           context,
+      //           MaterialPageRoute(
+      //             builder: (BuildContext context) {
+      //               return Scaffold(
+      //                 appBar: AppBar(title: Text("Next Page")),
+      //                 body: Center(
+      //                   child: Text(
+      //                     "You can use the flashlight here because even though the camera is still running in the background, I turned it off",
+      //                     textAlign: TextAlign.center,
+      //
+      //                   ),
+      //                 ),
+      //               );
+      //             },
+      //           ),
+      //         );
+      //         await cameraController!.turnOnCamera();
+      //       },
+      //     ),
+      //     Container(height: 16.0),
+      //     FloatingActionButton(
+      //       heroTag: "switch",
+      //       child: Icon(Icons.switch_camera),
+      //       onPressed: () async {
+      //         await cameraController!.switchCamera();
+      //       },
+      //     ),
+      //     Container(height: 16.0),
+      //     FloatingActionButton(
+      //       heroTag: "capture",
+      //       child: Icon(Icons.camera),
+      //       onPressed: () {
+      //         cameraController!.captureImage();
+      //       },
+      //     ),
+      //   ],
+      // ),
     );
   }
 

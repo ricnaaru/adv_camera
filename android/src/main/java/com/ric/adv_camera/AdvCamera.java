@@ -9,74 +9,66 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.PixelFormat;
-import android.graphics.PorterDuff;
-import android.graphics.Rect;
 import android.hardware.Camera;
 import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.os.Environment;
-import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.Size;
 import android.view.MotionEvent;
 import android.view.OrientationEventListener;
+import android.view.ScaleGestureDetector;
 import android.view.Surface;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
 
 import androidx.annotation.NonNull;
+import androidx.camera.camera2.Camera2Config;
+import androidx.camera.core.CameraControl;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.CameraX;
+import androidx.camera.core.FocusMeteringAction;
+import androidx.camera.core.ImageAnalysis;
+import androidx.camera.core.ImageProxy;
+import androidx.camera.core.MeteringPoint;
+import androidx.camera.core.Preview;
+import androidx.camera.core.SurfaceOrientedMeteringPointFactory;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
+import androidx.core.content.ContextCompat;
+import androidx.lifecycle.LifecycleOwner;
+
+import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.platform.PlatformView;
 
-class WaitForCameraObject {
-    MethodChannel.Result o;
-
-    public WaitForCameraObject(MethodChannel.Result o) {
-        this.o = o;
-    }
-
-    public void notifyCameraSet() {
-        o.success(true);
-    }
-}
-
 @SuppressWarnings("ALL")
 public class AdvCamera implements MethodChannel.MethodCallHandler,
-        PlatformView, SurfaceHolder.Callback {
+        PlatformView {
     private final MethodChannel methodChannel;
     private final Context context;
     private final Activity activity;
     private boolean disposed = false;
     private final View view;
-    private final SurfaceView imgSurface;
-    private final SurfaceHolder holderTransparent;
-    private final SurfaceHolder surfaceHolder;
-    private Camera camera;
+    private androidx.camera.core.Camera camera;
     private int cameraFacing = 0;
     private SavePicTask savePicTask;
-    private final Camera.PictureCallback jpegCallback;
     private File folder;
     private Integer maxSize;
     private String savePath;
@@ -92,6 +84,8 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     private WaitForCameraObject waitForCameraObject;
     private int focusRectColor = Color.GREEN;
     private float focusRectSize = 100f;
+    PreviewView previewView;
+    float lastScale = 0f;
 
     @SuppressLint({"InflateParams", "ClickableViewAccessibility"})
     AdvCamera(
@@ -106,357 +100,369 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 new MethodChannel(registrar.messenger(), "plugins.flutter.io/adv_camera/" + id);
         methodChannel.setMethodCallHandler(this);
         view = registrar.activity().getLayoutInflater().inflate(com.ric.adv_camera.R.layout.activity_camera, null);
-        imgSurface = view.findViewById(com.ric.adv_camera.R.id.imgSurface);
-        final SurfaceView x = view.findViewById(R.id.TransparentView);
-        x.setZOrderMediaOverlay(true);
-        holderTransparent = x.getHolder();
-        holderTransparent.setFormat(PixelFormat.TRANSPARENT);
-        holderTransparent.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
 
-        CameraFragment cameraFragment = (CameraFragment) activity.getFragmentManager().findFragmentById(com.ric.adv_camera.R.id.cameraFragment);
-        imgSurface.setFocusable(true);
-        imgSurface.setFocusableInTouchMode(true);
 
-        cameraFragment.listener = new FragmentLifecycleListener() {
+        previewView = view.findViewById(R.id.previewView);
+
+        CameraX.initialize(context, Camera2Config.defaultConfig());
+        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(context);
+        cameraProviderFuture.addListener(new Runnable() {
             @Override
-            public void onPause() {
-                if (camera != null) {
-                    camera.stopPreview();
-                    camera.release();
-                    camera = null;
+            public void run() {
+                try {
+                    ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                    bindImageAnalysis(cameraProvider);
+                } catch (ExecutionException | InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
-
+        }, ContextCompat.getMainExecutor(context));
+        final ListenableFuture[] xxx = new ListenableFuture[1];
+        final long[] lastTime = {0};
+        ScaleGestureDetector.SimpleOnScaleGestureListener listener = new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override
-            public void onResume() {
-                setupCamera();
+            public boolean onScale(ScaleGestureDetector detector) {
+                float scale = camera.getCameraInfo().getZoomRatio().getValue() * detector.getScaleFactor();
+
+                camera.getCameraControl().setZoomRatio(scale);
+//                if (detector.getEventTime() - lastTime[0] < 100) return true;
+
+//                lastTime[0] = detector.getEventTime();
+//                float minScale = camera.getCameraInfo().getZoomState().getValue().getMinZoomRatio();
+//                float maxScale = camera.getCameraInfo().getZoomState().getValue().getMaxZoomRatio();
+//
+//                float x = detector.getCurrentSpan() - detector.getPreviousSpan();
+//                float scale = camera.getCameraInfo().getZoomState().getValue().getZoomRatio() * x / 400;
+//                lastScale = clamp(lastScale + scale, minScale, maxScale);
+//                float finalScale = lastScale;
+//                Log.d("ricric", "camera.getCameraInfo().getZoomState().getValue().getZoomRatio() => " + camera.getCameraInfo().getZoomState().getValue().getZoomRatio());
+//                Log.d("ricric", "detector.getScaleFactor() => " + detector.getScaleFactor() + " + " + detector.getCurrentSpan() + " + " + detector.getPreviousSpan());
+//
+//                Log.d("ricric", "lastScale + scale => " + lastScale + " + " + scale);
+//                Log.d("ricric", "detector.getTimeDelta() xxx.length => (" + xxx.length + " > 0 && " + xxx[0] + ".isDone()) || " + xxx[0] + " == null");
+////                if ((xxx[0] != null && xxx[0].isDone()) || xxx[0] == null) {
+////                    Log.d("ricric", "detector.getTimeDelta() => " + detector.getTimeDelta() + ", " + detector.getEventTime());
+////                    xxx[0] = camera.getCameraControl().setZoomRatio(finalScale);
+////                }
+////                return true;
+//                if (xxx[0] == null || (xxx[0] != null && xxx[0].isDone())) {
+////                    xxx[0].cancel(false);
+//                    xxx[0] = camera.getCameraControl().setZoomRatio(finalScale);
+//                    xxx[0].addListener(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            Log.d("ricric", "run");
+//                            lastScale = finalScale;
+//                        }
+//                    }, new Executor() {
+//                        @Override
+//                        public void execute(Runnable runnable) {
+//                            Log.d("ricric", "execute --> " + camera.getCameraInfo().getZoomState().getValue().getZoomRatio());
+//                        }
+//                    });
+//                }
+                return true;
             }
         };
 
-        if (args instanceof HashMap) {
-            @SuppressWarnings({"unchecked"})
-            Map<String, Object> params = (Map<String, Object>) args;
-            Object initialCamera = params.get("initialCameraType");
-            Object flashType = params.get("flashType");
-            Object savePath = params.get("savePath");
-            Object previewRatio = params.get("previewRatio");
-            Object fileNamePrefix = params.get("fileNamePrefix");
-            Object maxSize = params.get("maxSize");
-            Object bestPictureSize = params.get("bestPictureSize");
-            Object focusRectColorRed = params.get("focusRectColorRed");
-            Object focusRectColorGreen = params.get("focusRectColorGreen");
-            Object focusRectColorBlue = params.get("focusRectColorBlue");
-            Object focusRectSize = params.get("focusRectSize");
+        ScaleGestureDetector scaleGestureDetector = new ScaleGestureDetector(context, listener);
 
-            if (initialCamera != null) {
-                if (initialCamera.equals("front")) {
-                    cameraFacing = 1;
-                } else if (initialCamera.equals("rear")) {
-                    cameraFacing = 0;
-                }
-            }
-
-            if (flashType != null) {
-                this.flashType = flashType.toString();
-            }
-
-            if (savePath != null) {
-                this.savePath = savePath.toString();
-            } else {
-                this.savePath = Environment.getExternalStorageDirectory() + "/images";
-            }
-
-            if (previewRatio != null) {
-                this.previewRatio = previewRatio.toString();
-            } else {
-                this.previewRatio = "16:9";
-            }
-
-            if (fileNamePrefix != null) {
-                this.fileNamePrefix = fileNamePrefix.toString();
-            }
-
-            if (maxSize != null) {
-                this.maxSize = (Integer) maxSize;
-            }
-
-            if (bestPictureSize != null) {
-                this.bestPictureSize = Boolean.parseBoolean(bestPictureSize.toString());
-            }
-
-            if (focusRectColorRed != null && focusRectColorGreen != null && focusRectColorBlue != null) {
-                final int red = Integer.parseInt(focusRectColorRed.toString());
-                final int green = Integer.parseInt(focusRectColorGreen.toString());
-                final int blue = Integer.parseInt(focusRectColorBlue.toString());
-                focusRectColor = Color.rgb(red, green, blue);
-            }
-
-            if (focusRectSize != null) {
-                this.focusRectSize = Float.parseFloat(focusRectSize.toString());
-            }
-        }
-
-        imgSurface.setOnTouchListener(new View.OnTouchListener() {
+        previewView.setOnTouchListener(new View.OnTouchListener() {
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                // Get the pointer ID
-                Camera.Parameters params = camera.getParameters();
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                Log.d("ricric", "touched " + motionEvent.getPointerCount() + ", " + motionEvent.actionToString(motionEvent.getAction()));
 
-                int action = event.getAction();
-
-                if (event.getPointerCount() > 1) {
-                    // handle multi-touch events
-                    if (action == MotionEvent.ACTION_POINTER_DOWN) {
-                        mDist = getFingerSpacing(event);
-                    } else if (action == MotionEvent.ACTION_MOVE && params.isZoomSupported()) {
-                        camera.cancelAutoFocus();
-                        handleZoom(event, params);
-                    }
-                } else {
-                    // handle single touch events
-                    if (action == MotionEvent.ACTION_UP) {
-                        int pointerId = event.getPointerId(0);
-                        int pointerIndex = event.findPointerIndex(pointerId);
-
-                        // Get the pointer's current position
-                        handleFocus(event.getX(pointerIndex), event.getY(pointerIndex));
-                    }
+                if (motionEvent.getPointerCount() > 1) {
+                    scaleGestureDetector.onTouchEvent(motionEvent);
+                } else if (motionEvent.getPointerCount() == 1 && motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                    SurfaceOrientedMeteringPointFactory factory = new SurfaceOrientedMeteringPointFactory(previewView.getWidth(), previewView.getHeight());
+                    MeteringPoint point = factory.createPoint(motionEvent.getX(), motionEvent.getY());
+                    MeteringPoint point2 = new MeteringPoint(motionEvent.getX(), motionEvent.getY(), 100, null);
+                    Log.d("ricric", "focusing " + point.getX() + ", " + point.getY());
+                    FocusMeteringAction action = FocusMeteringAction.Builder.from(point).build();
+                    CameraControl cameraControl = camera.getCameraControl();
+                    cameraControl.startFocusAndMetering(action);
                 }
+
+//                if (motionEvent.getPointerCount() > 1) {
+//                    int action2 = motionEvent.getAction();
+//                    // handle multi-touch events
+//                    if (action2 == MotionEvent.ACTION_POINTER_DOWN) {
+//                        mDist = getFingerSpacing(motionEvent);
+//                    } else if (action2 == MotionEvent.ACTION_MOVE) {
+//                        handleZoom(motionEvent);
+//                    }
+//                }
+
                 return true;
             }
         });
+    }
 
+    public static float clamp(float val, float min, float max) {
+        return Math.max(min, Math.min(max, val));
+    }
 
-        folder = new File(this.savePath);
-        if (!folder.exists()) {
-            folder.mkdirs();
-        }
-
-        surfaceHolder = imgSurface.getHolder();
-        surfaceHolder.addCallback(this);
-
-        jpegCallback = new Camera.PictureCallback() {
-            public void onPictureTaken(byte[] data, Camera camera) {
-                camera.stopPreview();
-
-                cancelSavePicTaskIfNeed();
-                savePicTask = new SavePicTask(data, getPhotoRotation());
-                savePicTask.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR);
+    private void bindImageAnalysis(@NonNull ProcessCameraProvider cameraProvider) {
+        ImageAnalysis imageAnalysis =
+                new ImageAnalysis.Builder().setTargetResolution(new Size(1280, 720))
+                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build();
+        imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(context), new ImageAnalysis.Analyzer() {
+            @Override
+            public void analyze(@NonNull ImageProxy image) {
+                image.close();
+            }
+        });
+        OrientationEventListener orientationEventListener = new OrientationEventListener(context) {
+            @Override
+            public void onOrientationChanged(int orientation) {
+                Log.d("ricric", "orientation - " + orientation);
             }
         };
+        orientationEventListener.enable();
+        Preview preview = new Preview.Builder().build();
+        CameraSelector cameraSelector = new CameraSelector.Builder()
+                .requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
+        preview.setPreviewSurfaceProvider(previewView.getPreviewSurfaceProvider());
+        camera = cameraProvider.bindToLifecycle((LifecycleOwner) activity, cameraSelector,
+                imageAnalysis, preview);
 
-        identifyOrientationEvents();
+
     }
 
-    private void captureImage() {
-        camera.takePicture(null, null, jpegCallback);
+    private void recordVideo() {
     }
+
+    float ulala = 1.0f;
 
     @Override
     public void onMethodCall(MethodCall methodCall, @NonNull MethodChannel.Result result) {
         Log.d("ricric", "methodCall.method => " + methodCall.method);
         switch (methodCall.method) {
             case "waitForCamera":
-                if (camera == null)
-                    waitForCameraObject = new WaitForCameraObject(result);
-                else
-                    result.success(true);
+//                if (camera == null)
+//                    waitForCameraObject = new WaitForCameraObject(result);
+//                else
+                result.success(true);
                 break;
             case "turnOff":
-                if (camera != null) {
-                    camera.stopPreview();
-                    camera.release();
-                    camera = null;
-                }
-                result.success(null);
+//                if (camera != null) {
+//                    camera.stopPreview();
+//                    camera.release();
+//                    camera = null;
+//                }
+//                result.success(null);
                 break;
             case "turnOn":
                 setupCamera();
                 result.success(null);
                 break;
             case "setPreviewRatio": {
-                String previewRatio = "";
-
-                if (methodCall.arguments instanceof HashMap) {
-                    @SuppressWarnings({"unchecked"})
-                    Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
-                    Object previewRatioRaw = params.get("previewRatio");
-                    previewRatio = previewRatioRaw == null ? null : previewRatioRaw.toString();
-                }
-
-                Camera.Parameters param = camera.getParameters();
-
-                List<Camera.Size> sizes = param.getSupportedPreviewSizes();
-                Camera.Size selectedSize = null;
-                for (Camera.Size size : sizes) {
-                    if (asFraction(size.width, size.height).equals(previewRatio)) {
-                        selectedSize = size;
-                        break;
-                    }
-                }
-
-                if (selectedSize == null) {
-                    result.success(false);
-                    return;
-                }
-
-                this.previewRatio = previewRatio;
-
-                param.setPreviewSize(selectedSize.width, selectedSize.height);
-
-                camera.stopPreview();
-                camera.setParameters(param);
-                try {
-                    camera.setPreviewDisplay(surfaceHolder);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                camera.startPreview();
-
-                result.success(true);
+//                String previewRatio = "";
+//
+//                if (methodCall.arguments instanceof HashMap) {
+//                    @SuppressWarnings({"unchecked"})
+//                    Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
+//                    Object previewRatioRaw = params.get("previewRatio");
+//                    previewRatio = previewRatioRaw == null ? null : previewRatioRaw.toString();
+//                }
+//
+//                Camera.Parameters param = camera.getParameters();
+//
+//                List<Camera.Size> sizes = param.getSupportedPreviewSizes();
+//                Camera.Size selectedSize = null;
+//                for (Camera.Size size : sizes) {
+//                    if (asFraction(size.width, size.height).equals(previewRatio)) {
+//                        selectedSize = size;
+//                        break;
+//                    }
+//                }
+//
+//                if (selectedSize == null) {
+//                    result.success(false);
+//                    return;
+//                }
+//
+//                this.previewRatio = previewRatio;
+//
+//                param.setPreviewSize(selectedSize.width, selectedSize.height);
+//
+//                camera.stopPreview();
+//                camera.setParameters(param);
+//                try {
+//                    camera.setPreviewDisplay(surfaceHolder);
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//                camera.startPreview();
+//
+//                result.success(true);
                 break;
             }
             case "captureImage":
-                Integer maxSize = null;
-
-                if (methodCall.arguments instanceof HashMap) {
-                    @SuppressWarnings({"unchecked"})
-                    Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
-                    maxSize = params.get("maxSize") == null ? null : (Integer) params.get("maxSize");
-                }
-
-                if (maxSize != null) {
-                    this.maxSize = maxSize;
-                }
-
-                captureImage();
+//                Log.d("ricric2", "ulala1 " + ulala);
+//                if (ulala == 1f)
+//                    ulala = 4f;
+//                else
+//                    ulala = 1f;
+//                ListenableFuture xxxx = camera.getCameraControl().setZoomRatio(ulala);
+//                xxxx.addListener(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        Log.d("ricric2", "run " + ulala + ", " + camera.getCameraInfo().getZoomState().getValue().getZoomRatio());
+//                    }
+//                }, new Executor() {
+//                    @Override
+//                    public void execute(Runnable runnable) {
+//                        Log.d("ricric2", "execute " + ulala + ", " + camera.getCameraInfo().getZoomState().getValue().getZoomRatio());
+//                    }
+//                });
+//                Log.d("ricric2", "ulala2 " + ulala);
+//                Integer maxSize = null;
+//
+//                if (methodCall.arguments instanceof HashMap) {
+//                    @SuppressWarnings({"unchecked"})
+//                    Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
+//                    maxSize = params.get("maxSize") == null ? null : (Integer) params.get("maxSize");
+//                }
+//
+//                if (maxSize != null) {
+//                    this.maxSize = maxSize;
+//                }
+//
+//                captureImage();
+//
+                result.success(true);
+                break;
+            case "recordVideo":
+                recordVideo();
 
                 result.success(true);
                 break;
             case "switchCamera":
-                if (cameraFacing == 0) {
-                    cameraFacing = 1;
-                } else {
-                    cameraFacing = 0;
-                }
-
-                camera.stopPreview();
-                camera.release();
-                setupCamera();
+//                if (cameraFacing == 0) {
+//                    cameraFacing = 1;
+//                } else {
+//                    cameraFacing = 0;
+//                }
+//
+//                camera.stopPreview();
+//                camera.release();
+//                setupCamera();
                 result.success(true);
                 break;
             case "getPictureSizes": {
-                List<String> pictureSizes = new ArrayList<>();
-
-                Camera.Parameters param = camera.getParameters();
-
-                List<Camera.Size> sizes = param.getSupportedPictureSizes();
-                for (Camera.Size size : sizes) {
-                    pictureSizes.add(size.width + ":" + size.height);
-                }
-
-                result.success(pictureSizes);
+//                List<String> pictureSizes = new ArrayList<>();
+//
+//                Camera.Parameters param = camera.getParameters();
+//
+//                List<Camera.Size> sizes = param.getSupportedPictureSizes();
+//                for (Camera.Size size : sizes) {
+//                    pictureSizes.add(size.width + ":" + size.height);
+//                }
+//
+//                result.success(pictureSizes);
                 break;
             }
             case "setPictureSize": {
-                int pictureWidth = 0;
-                int pictureHeight = 0;
-                String error = "";
-
-                if (methodCall.arguments instanceof HashMap) {
-                    @SuppressWarnings({"unchecked"})
-                    Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
-                    pictureWidth = (int) params.get("pictureWidth");
-                    pictureHeight = (int) params.get("pictureHeight");
-                }
-
-                Camera.Parameters param = camera.getParameters();
-
-                param.setPictureSize(pictureWidth, pictureHeight);
-
-                camera.stopPreview();
-
-                try {
-                    camera.setParameters(param);
-                    camera.setPreviewDisplay(surfaceHolder);
-                    this.pictureSize = camera.new Size(pictureWidth, pictureHeight);
-                } catch (IOException e) {
-                    error = e.getMessage();
-                } catch (RuntimeException e) {
-                    error = e.getMessage();
-                }
-
-                camera.startPreview();
-
-                if (error.isEmpty()) {
-                    result.success(true);
-                } else {
-                    result.error("Camera Error", "setPictureSize", error);
-                }
+//                int pictureWidth = 0;
+//                int pictureHeight = 0;
+//                String error = "";
+//
+//                if (methodCall.arguments instanceof HashMap) {
+//                    @SuppressWarnings({"unchecked"})
+//                    Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
+//                    pictureWidth = (int) params.get("pictureWidth");
+//                    pictureHeight = (int) params.get("pictureHeight");
+//                }
+//
+//                Camera.Parameters param = camera.getParameters();
+//
+//                param.setPictureSize(pictureWidth, pictureHeight);
+//
+//                camera.stopPreview();
+//
+//                try {
+//                    camera.setParameters(param);
+//                    camera.setPreviewDisplay(surfaceHolder);
+//                    this.pictureSize = camera.new Size(pictureWidth, pictureHeight);
+//                } catch (IOException e) {
+//                    error = e.getMessage();
+//                } catch (RuntimeException e) {
+//                    error = e.getMessage();
+//                }
+//
+//                camera.startPreview();
+//
+//                if (error.isEmpty()) {
+//                    result.success(true);
+//                } else {
+//                    result.error("Camera Error", "setPictureSize", error);
+//                }
                 break;
             }
             case "setSavePath":
-                if (methodCall.arguments instanceof HashMap) {
-                    @SuppressWarnings({"unchecked"})
-                    Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
-                    this.savePath = params.get("savePath") == null ? null : params.get("savePath").toString();
-                }
-
-                folder = new File(this.savePath);
-
-                if (!folder.exists()) {
-                    folder.mkdirs();
-                }
-
-                result.success(true);
+//                if (methodCall.arguments instanceof HashMap) {
+//                    @SuppressWarnings({"unchecked"})
+//                    Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
+//                    this.savePath = params.get("savePath") == null ? null : params.get("savePath").toString();
+//                }
+//
+//                folder = new File(this.savePath);
+//
+//                if (!folder.exists()) {
+//                    folder.mkdirs();
+//                }
+//
+//                result.success(true);
                 break;
             case "getFlashType": {
-                Camera.Parameters param = camera.getParameters();
-                result.success(param.getSupportedFlashModes());
+//                Camera.Parameters param = camera.getParameters();
+//                result.success(param.getSupportedFlashModes());
                 break;
             }
             case "setFlashType": {
-                String flashType = "auto";
-
-                if (methodCall.arguments instanceof HashMap) {
-                    @SuppressWarnings({"unchecked"})
-                    Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
-                    flashType = params.get("flashType") == null ? "auto" : params.get("flashType").toString();
-                }
-
-                Camera.Parameters param = camera.getParameters();
-
-                if (this.flashType.equals("torch") && flashType.equals("on")) {
-                    param.setFlashMode("off");
-                    camera.setParameters(param);
-                }
-
-                if (flashType.equals("torch")) {
-                    List<String> supportedFlashModes = param.getSupportedFlashModes();
-
-                    if (supportedFlashModes != null) {
-                        if (supportedFlashModes.contains(Camera.Parameters.FLASH_MODE_TORCH)) {
-                            this.flashType = Camera.Parameters.FLASH_MODE_TORCH;
-                        } else if (supportedFlashModes.contains(Camera.Parameters.FLASH_MODE_ON)) {
-                            this.flashType = Camera.Parameters.FLASH_MODE_ON;
-                        }
-                    }
-                } else {
-                    this.flashType = flashType;
-                }
-
-                param.setFlashMode(translateFlashType(param.getSupportedFlashModes()));
-
-                camera.stopPreview();
-                camera.setParameters(param);
-                try {
-                    camera.setPreviewDisplay(surfaceHolder);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                camera.startPreview();
-
-                result.success(true);
+//                String flashType = "auto";
+//
+//                if (methodCall.arguments instanceof HashMap) {
+//                    @SuppressWarnings({"unchecked"})
+//                    Map<String, Object> params = (Map<String, Object>) methodCall.arguments;
+//                    flashType = params.get("flashType") == null ? "auto" : params.get("flashType").toString();
+//                }
+//
+//                Camera.Parameters param = camera.getParameters();
+//
+//                if (this.flashType.equals("torch") && flashType.equals("on")) {
+//                    param.setFlashMode("off");
+//                    camera.setParameters(param);
+//                }
+//
+//                if (flashType.equals("torch")) {
+//                    List<String> supportedFlashModes = param.getSupportedFlashModes();
+//
+//                    if (supportedFlashModes != null) {
+//                        if (supportedFlashModes.contains(Camera.Parameters.FLASH_MODE_TORCH)) {
+//                            this.flashType = Camera.Parameters.FLASH_MODE_TORCH;
+//                        } else if (supportedFlashModes.contains(Camera.Parameters.FLASH_MODE_ON)) {
+//                            this.flashType = Camera.Parameters.FLASH_MODE_ON;
+//                        }
+//                    }
+//                } else {
+//                    this.flashType = flashType;
+//                }
+//
+//                param.setFlashMode(translateFlashType(param.getSupportedFlashModes()));
+//
+//                camera.stopPreview();
+//                camera.setParameters(param);
+//                try {
+//                    camera.setPreviewDisplay(surfaceHolder);
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//                camera.startPreview();
+//
+//                result.success(true);
                 break;
             }
             case "setFocus": {
@@ -485,93 +491,93 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         if (disposed) {
             return;
         }
-        disposed = true;
-        methodChannel.setMethodCallHandler(null);
-
-        CameraFragment f = (CameraFragment) activity.getFragmentManager()
-                .findFragmentById(com.ric.adv_camera.R.id.cameraFragment);
-        if (f != null) {
-            activity.getFragmentManager().beginTransaction().remove(f).commit();
-        }
+//        disposed = true;
+//        methodChannel.setMethodCallHandler(null);
+//
+//        CameraFragment f = (CameraFragment) activity.getFragmentManager()
+//                .findFragmentById(com.ric.adv_camera.R.id.cameraFragment);
+//        if (f != null) {
+//            activity.getFragmentManager().beginTransaction().remove(f).commit();
+//        }
     }
 
-    @Override
-    public void surfaceCreated(SurfaceHolder holder) {
-        setupCamera();
-    }
+//    @Override
+//    public void surfaceCreated(SurfaceHolder holder) {
+//        setupCamera();
+//    }
 
     private void setupCamera() {
+//        try {
+//            if (cameraFacing == 0) {
+//                camera = Camera.open(0);
+//            } else {
+//                camera = Camera.open(1);
+//            }
+//        } catch (RuntimeException e) {
+//            e.printStackTrace();
+//            return;
+//        }
+//
+//        if (waitForCameraObject != null) {
+//            waitForCameraObject.notifyCameraSet();
+//            waitForCameraObject = null;
+//        }
+
         try {
-            if (cameraFacing == 0) {
-                camera = Camera.open(0);
-            } else {
-                camera = Camera.open(1);
-            }
-        } catch (RuntimeException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        if (waitForCameraObject != null) {
-            waitForCameraObject.notifyCameraSet();
-            waitForCameraObject = null;
-        }
-
-        try {
-            Camera.Parameters param = camera.getParameters();
-
-            if (this.bestPictureSize) {
-                List<Camera.Size> sizes2 = param.getSupportedPictureSizes();
-                Collections.sort(sizes2, new Comparator<Camera.Size>() {
-                    @Override
-                    public int compare(Camera.Size o1, Camera.Size o2) {
-                        return (o2.width - o1.width) + (o2.height - o1.height);
-                    }
-                });
-
-                pictureSize = sizes2.get(0);
-            } else {
-                pictureSize = param.getPictureSize();
-            }
-
-            List<Camera.Size> sizes = param.getSupportedPreviewSizes();
-            Camera.Size selectedSize = sizes.get(0);
-            for (Camera.Size size : sizes) {
-                if (asFraction(size.width, size.height).equals(this.previewRatio)) {
-                    selectedSize = size;
-                    break;
-                }
-            }
-
-            //get diff to get perfact preview sizes
-            DisplayMetrics displaymetrics = new DisplayMetrics();
-            activity.getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
-
-            param.setPreviewSize(selectedSize.width, selectedSize.height);
-            param.setPictureSize(pictureSize.width, pictureSize.height);
-            param.setFlashMode(translateFlashType(param.getSupportedFlashModes()));
-
-            List<String> supportedFocusMode = param.getSupportedFocusModes();
-            String focusMode = Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE;
-            if (!supportedFocusMode.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
-                if (supportedFocusMode.size() > 0) {
-                    focusMode = supportedFocusMode.get(0);
-                }
-            }
-            param.setFocusMode(focusMode);
-
-            /// I block this script because Xiaomi 4a and Huawei gets rotated because of this
-            int orientation = setCameraDisplayOrientation(0);
-//            param.setRotation(orientation);
-
-            try {
-                camera.setParameters(param);
-            } catch (RuntimeException e) {
-                Log.d("AdvCamera", "set Parameters Failed\n" + pictureSize.width + ", " + pictureSize.height);
-            }
-
-            camera.setPreviewDisplay(surfaceHolder);
-            camera.startPreview();
+//            Camera.Parameters param = camera.getParameters();
+//
+//            if (this.bestPictureSize) {
+//                List<Camera.Size> sizes2 = param.getSupportedPictureSizes();
+//                Collections.sort(sizes2, new Comparator<Camera.Size>() {
+//                    @Override
+//                    public int compare(Camera.Size o1, Camera.Size o2) {
+//                        return (o2.width - o1.width) + (o2.height - o1.height);
+//                    }
+//                });
+//
+//                pictureSize = sizes2.get(0);
+//            } else {
+//                pictureSize = param.getPictureSize();
+//            }
+//
+//            List<Camera.Size> sizes = param.getSupportedPreviewSizes();
+//            Camera.Size selectedSize = sizes.get(0);
+//            for (Camera.Size size : sizes) {
+//                if (asFraction(size.width, size.height).equals(this.previewRatio)) {
+//                    selectedSize = size;
+//                    break;
+//                }
+//            }
+//
+//            //get diff to get perfact preview sizes
+//            DisplayMetrics displaymetrics = new DisplayMetrics();
+//            activity.getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+//
+//            param.setPreviewSize(selectedSize.width, selectedSize.height);
+//            param.setPictureSize(pictureSize.width, pictureSize.height);
+//            param.setFlashMode(translateFlashType(param.getSupportedFlashModes()));
+//
+//            List<String> supportedFocusMode = param.getSupportedFocusModes();
+//            String focusMode = Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE;
+//            if (!supportedFocusMode.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+//                if (supportedFocusMode.size() > 0) {
+//                    focusMode = supportedFocusMode.get(0);
+//                }
+//            }
+//            param.setFocusMode(focusMode);
+//
+//            /// I block this script because Xiaomi 4a and Huawei gets rotated because of this
+//            int orientation = setCameraDisplayOrientation(0);
+////            param.setRotation(orientation);
+//
+//            try {
+//                camera.setParameters(param);
+//            } catch (RuntimeException e) {
+//                Log.d("AdvCamera", "set Parameters Failed\n" + pictureSize.width + ", " + pictureSize.height);
+//            }
+//
+//            camera.setPreviewDisplay(surfaceHolder);
+//            camera.startPreview();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -600,23 +606,23 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         return result;
     }
 
-    @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        refreshCamera();
-    }
-
-    @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
-        try {
-            if (camera != null) {
-                camera.stopPreview();
-                camera.release();
-                camera = null;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+//    @Override
+//    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+//        refreshCamera();
+//    }
+//
+//    @Override
+//    public void surfaceDestroyed(SurfaceHolder holder) {
+//        try {
+//            if (camera != null) {
+//                camera.stopPreview();
+//                camera.release();
+//                camera = null;
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     private int setCameraDisplayOrientation(int cameraId) {
         Camera.CameraInfo info = new Camera.CameraInfo();
@@ -657,39 +663,39 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
         }
 
-        camera.setDisplayOrientation(result);
+//        camera.setDisplayOrientation(result);
 
         return result;
 
     }
 
     private void refreshCamera() {
-        if (surfaceHolder.getSurface() == null) {
-            return;
-        }
-        try {
-            camera.stopPreview();
-            Camera.Parameters param = camera.getParameters();
-            param.setFlashMode(translateFlashType(param.getSupportedFlashModes()));
-            refreshCameraPreview(param);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//        if (surfaceHolder.getSurface() == null) {
+//            return;
+//        }
+//        try {
+//            camera.stopPreview();
+//            Camera.Parameters param = camera.getParameters();
+//            param.setFlashMode(translateFlashType(param.getSupportedFlashModes()));
+//            refreshCameraPreview(param);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
     }
 
     private void refreshCameraPreview(Camera.Parameters param) {
-        try {
-            //this is unnecessary because on certain device (Xiaomi 4A / Huawei) it is rotated
-            int orientation = setCameraDisplayOrientation(0);
-//            param.setRotation(orientation);
-            camera.setParameters(param);
-
-            camera.setPreviewDisplay(surfaceHolder);
-            camera.startPreview();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//        try {
+//            //this is unnecessary because on certain device (Xiaomi 4A / Huawei) it is rotated
+//            int orientation = setCameraDisplayOrientation(0);
+////            param.setRotation(orientation);
+//            camera.setParameters(param);
+//
+//            camera.setPreviewDisplay(surfaceHolder);
+//            camera.startPreview();
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
     }
 
     private void cancelSavePicTaskIfNeed() {
@@ -928,147 +934,153 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         return 270;
     }
 
+    ListenableFuture lf;
 
-    private void handleZoom(MotionEvent event, Camera.Parameters params) {
-        int maxZoom = params.getMaxZoom();
-        int zoom = params.getZoom();
-        float newDist = getFingerSpacing(event);
-
-        if (Math.abs(newDist - mDist) < 2) return;
-
-        if (newDist > mDist) {
-            //zoom in
-            if (zoom < maxZoom)
-                zoom++;
-        } else if (newDist < mDist) {
-            //zoom out
-            if (zoom > 0)
-                zoom--;
-        }
-        mDist = newDist;
-        params.setZoom(zoom);
-        camera.setParameters(params);
+    private void handleZoom(MotionEvent event) {
+//        float minZoom = camera.getCameraInfo().getZoomState().getValue().getMinZoomRatio();
+//        float maxZoom = camera.getCameraInfo().getZoomState().getValue().getMaxZoomRatio();
+//        float zoom = camera.getCameraInfo().getZoomState().getValue().getZoomRatio();
+//        float newDist = getFingerSpacing(event);
+//
+//        if (Math.abs(newDist - mDist) < 2) return;
+//
+//        if (newDist > mDist) {
+//            //zoom in
+//            if (zoom < maxZoom)
+//                zoom++;
+//        } else if (newDist < mDist) {
+//            //zoom out
+//            if (zoom > 0)
+//                zoom--;
+//        }
+//        zoom = clamp(zoom, minZoom, maxZoom);
+//        mDist = newDist;
+//        Log.d("ricric2", "zoom " + zoom);
+////        if (lf == null || (lf != null && lf.isDone())) {
+//        lf = camera.getCameraControl().setZoomRatio(zoom);
+//        }
+//        camera.setParameters(params);
     }
 
     private void handleFocus(float initialX, float initialY) {
-        final int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
-        int surfaceHeight = imgSurface.getHeight();
-        int surfaceWidth = imgSurface.getWidth();
-
-        /// normal
-        float x = initialY;
-        float y = surfaceWidth - initialX;
-
-        if (rotation == Surface.ROTATION_90) {
-            /// for this rotation, we have to swap upper right corner to bottom left corner
-            /// the rest, bottom right and upper left, will still be the same
-            /// rotate left
-            final float xPercentage = initialY / surfaceHeight;
-            final float yPercentage = initialX / surfaceWidth;
-            final boolean condition = (xPercentage > .5) == (yPercentage > .5);
-            x = !condition ? (1 - xPercentage) * surfaceHeight : initialY;
-            y = !condition ? (1 - yPercentage) * surfaceWidth : initialX;
-        } else if (rotation == Surface.ROTATION_270) {
-            /// for this rotation, we have to swap upper left corner to bottom right corner
-            /// the rest, bottom left and upper right, will still be the same
-            /// rotate right
-            final float xPercentage = initialY / surfaceHeight;
-            final float yPercentage = initialX / surfaceWidth;
-            final boolean condition = (xPercentage > .5) == (yPercentage > .5);
-            x = condition ? (1 - xPercentage) * surfaceHeight : initialY;
-            y = condition ? (1 - yPercentage) * surfaceWidth : initialX;
-        }
-
-        //cancel previous actions
-        camera.cancelAutoFocus();
-
-        Rect touchRect = new Rect(
-                (int) (x - focusRectSize),
-                (int) (y - focusRectSize),
-                (int) (x + focusRectSize),
-                (int) (y + focusRectSize));
-
-        int aboutToBeLeft = touchRect.left;
-        int aboutToBeTop = touchRect.top;
-        int aboutToBeRight = touchRect.right;
-        int aboutToBeBottom = touchRect.bottom;
-
-        if (aboutToBeLeft < 0) {
-            aboutToBeLeft = 0;
-            aboutToBeRight = 200;
-        }
-        if (aboutToBeTop < 0) {
-            aboutToBeTop = 0;
-            aboutToBeBottom = 200;
-        }
-        if (aboutToBeRight > surfaceHeight) {
-            aboutToBeRight = surfaceHeight;
-            aboutToBeLeft = surfaceHeight - 200;
-        }
-        if (aboutToBeBottom > surfaceWidth) {
-            aboutToBeBottom = surfaceWidth;
-            aboutToBeTop = surfaceWidth - 200;
-        }
-
-        aboutToBeLeft = aboutToBeLeft * 2000 / surfaceHeight - 1000;
-        aboutToBeTop = aboutToBeTop * 2000 / surfaceWidth - 1000;
-        aboutToBeRight = aboutToBeRight * 2000 / surfaceHeight - 1000;
-        aboutToBeBottom = aboutToBeBottom * 2000 / surfaceWidth - 1000;
-
-        Rect focusRect = new Rect(
-                aboutToBeLeft,
-                aboutToBeTop,
-                aboutToBeRight,
-                aboutToBeBottom);
-
-//        this.focusRect.setLeft(touchRect.left);
-//        this.focusRect.setTop(touchRect.top);
-//        this.focusRect.setRight(touchRect.right);
-//        this.focusRect.setBottom(touchRect.bottom);
-
-        final float RectLeft = initialX - focusRectSize;
-        final float RectTop = initialY - focusRectSize;
-        final float RectRight = initialX + focusRectSize;
-        final float RectBottom = initialY + focusRectSize;
-
-        setFocus(RectLeft, RectTop, RectRight, RectBottom, focusRectColor);
-
-        Camera.Parameters parameters = null;
-
-        try {
-            parameters = camera.getParameters();
-        } catch (Exception e) {
-            Log.e("Error", "Error getting parameter:" + e);
-        }
-
-        // check if parameters are set (handle RuntimeException: getParameters failed (empty parameters))
-        if (parameters != null) {
-            List<Camera.Area> mylist2 = new ArrayList<>();
-
-            mylist2.add(new Camera.Area(focusRect, 1000));
-
-            List<String> supportedFocusMode = parameters.getSupportedFocusModes();
-            String focusMode = Camera.Parameters.FOCUS_MODE_AUTO;
-            if (!supportedFocusMode.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
-                if (supportedFocusMode.size() > 0) {
-                    focusMode = supportedFocusMode.get(0);
-                }
-            }
-            parameters.setFocusMode(focusMode);
-            if (focusMode.equals(Camera.Parameters.FOCUS_MODE_AUTO))
-                parameters.setFocusAreas(mylist2);
-
-            try {
-                camera.setParameters(parameters);
-                camera.autoFocus(new Camera.AutoFocusCallback() {
-                    @Override
-                    public void onAutoFocus(boolean success, Camera camera) {
-                    }
-                });
-            } catch (Exception e) {
-                Log.e("error", "error => " + e);
-            }
-        }
+//        final int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+//        int surfaceHeight = imgSurface.getHeight();
+//        int surfaceWidth = imgSurface.getWidth();
+//
+//        /// normal
+//        float x = initialY;
+//        float y = surfaceWidth - initialX;
+//
+//        if (rotation == Surface.ROTATION_90) {
+//            /// for this rotation, we have to swap upper right corner to bottom left corner
+//            /// the rest, bottom right and upper left, will still be the same
+//            /// rotate left
+//            final float xPercentage = initialY / surfaceHeight;
+//            final float yPercentage = initialX / surfaceWidth;
+//            final boolean condition = (xPercentage > .5) == (yPercentage > .5);
+//            x = !condition ? (1 - xPercentage) * surfaceHeight : initialY;
+//            y = !condition ? (1 - yPercentage) * surfaceWidth : initialX;
+//        } else if (rotation == Surface.ROTATION_270) {
+//            /// for this rotation, we have to swap upper left corner to bottom right corner
+//            /// the rest, bottom left and upper right, will still be the same
+//            /// rotate right
+//            final float xPercentage = initialY / surfaceHeight;
+//            final float yPercentage = initialX / surfaceWidth;
+//            final boolean condition = (xPercentage > .5) == (yPercentage > .5);
+//            x = condition ? (1 - xPercentage) * surfaceHeight : initialY;
+//            y = condition ? (1 - yPercentage) * surfaceWidth : initialX;
+//        }
+//
+//        //cancel previous actions
+//        camera.cancelAutoFocus();
+//
+//        Rect touchRect = new Rect(
+//                (int) (x - focusRectSize),
+//                (int) (y - focusRectSize),
+//                (int) (x + focusRectSize),
+//                (int) (y + focusRectSize));
+//
+//        int aboutToBeLeft = touchRect.left;
+//        int aboutToBeTop = touchRect.top;
+//        int aboutToBeRight = touchRect.right;
+//        int aboutToBeBottom = touchRect.bottom;
+//
+//        if (aboutToBeLeft < 0) {
+//            aboutToBeLeft = 0;
+//            aboutToBeRight = 200;
+//        }
+//        if (aboutToBeTop < 0) {
+//            aboutToBeTop = 0;
+//            aboutToBeBottom = 200;
+//        }
+//        if (aboutToBeRight > surfaceHeight) {
+//            aboutToBeRight = surfaceHeight;
+//            aboutToBeLeft = surfaceHeight - 200;
+//        }
+//        if (aboutToBeBottom > surfaceWidth) {
+//            aboutToBeBottom = surfaceWidth;
+//            aboutToBeTop = surfaceWidth - 200;
+//        }
+//
+//        aboutToBeLeft = aboutToBeLeft * 2000 / surfaceHeight - 1000;
+//        aboutToBeTop = aboutToBeTop * 2000 / surfaceWidth - 1000;
+//        aboutToBeRight = aboutToBeRight * 2000 / surfaceHeight - 1000;
+//        aboutToBeBottom = aboutToBeBottom * 2000 / surfaceWidth - 1000;
+//
+//        Rect focusRect = new Rect(
+//                aboutToBeLeft,
+//                aboutToBeTop,
+//                aboutToBeRight,
+//                aboutToBeBottom);
+//
+////        this.focusRect.setLeft(touchRect.left);
+////        this.focusRect.setTop(touchRect.top);
+////        this.focusRect.setRight(touchRect.right);
+////        this.focusRect.setBottom(touchRect.bottom);
+//
+//        final float RectLeft = initialX - focusRectSize;
+//        final float RectTop = initialY - focusRectSize;
+//        final float RectRight = initialX + focusRectSize;
+//        final float RectBottom = initialY + focusRectSize;
+//
+//        setFocus(RectLeft, RectTop, RectRight, RectBottom, focusRectColor);
+//
+//        Camera.Parameters parameters = null;
+//
+//        try {
+//            parameters = camera.getParameters();
+//        } catch (Exception e) {
+//            Log.e("Error", "Error getting parameter:" + e);
+//        }
+//
+//        // check if parameters are set (handle RuntimeException: getParameters failed (empty parameters))
+//        if (parameters != null) {
+//            List<Camera.Area> mylist2 = new ArrayList<>();
+//
+//            mylist2.add(new Camera.Area(focusRect, 1000));
+//
+//            List<String> supportedFocusMode = parameters.getSupportedFocusModes();
+//            String focusMode = Camera.Parameters.FOCUS_MODE_AUTO;
+//            if (!supportedFocusMode.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+//                if (supportedFocusMode.size() > 0) {
+//                    focusMode = supportedFocusMode.get(0);
+//                }
+//            }
+//            parameters.setFocusMode(focusMode);
+//            if (focusMode.equals(Camera.Parameters.FOCUS_MODE_AUTO))
+//                parameters.setFocusAreas(mylist2);
+//
+//            try {
+//                camera.setParameters(parameters);
+//                camera.autoFocus(new Camera.AutoFocusCallback() {
+//                    @Override
+//                    public void onAutoFocus(boolean success, Camera camera) {
+//                    }
+//                });
+//            } catch (Exception e) {
+//                Log.e("error", "error => " + e);
+//            }
+//        }
     }
 
     private float getFingerSpacing(MotionEvent event) {
@@ -1098,40 +1110,40 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
     private void setFocus(float RectLeft, float RectTop, float RectRight, float RectBottom, int color) {
 
-        canvas = holderTransparent.lockCanvas();
-        canvas.drawColor(0, PorterDuff.Mode.CLEAR);
-        //border's properties
-        paint = new Paint();
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setColor(color);
-        paint.setStrokeWidth(3);
-        canvas.drawRect(RectLeft, RectTop, RectRight, RectBottom, paint);
-
-        holderTransparent.unlockCanvasAndPost(canvas);
-
-        final long id = System.currentTimeMillis();
-        final DismissHandler handler = new DismissHandler(id);
-        lastId = id;
-
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (handler.id == lastId) {
-                    dismissCanvas = holderTransparent.lockCanvas();
-                    if (dismissCanvas != null) {
-                        dismissCanvas.drawColor(0, PorterDuff.Mode.CLEAR);
-                        holderTransparent.unlockCanvasAndPost(dismissCanvas);
-                    }
-                }
-            }
-        }, 2000);
+//        canvas = holderTransparent.lockCanvas();
+//        canvas.drawColor(0, PorterDuff.Mode.CLEAR);
+//        //border's properties
+//        paint = new Paint();
+//        paint.setStyle(Paint.Style.STROKE);
+//        paint.setColor(color);
+//        paint.setStrokeWidth(3);
+//        canvas.drawRect(RectLeft, RectTop, RectRight, RectBottom, paint);
+//
+//        holderTransparent.unlockCanvasAndPost(canvas);
+//
+//        final long id = System.currentTimeMillis();
+//        final DismissHandler handler = new DismissHandler(id);
+//        lastId = id;
+//
+//        handler.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                if (handler.id == lastId) {
+//                    dismissCanvas = holderTransparent.lockCanvas();
+//                    if (dismissCanvas != null) {
+//                        dismissCanvas.drawColor(0, PorterDuff.Mode.CLEAR);
+//                        holderTransparent.unlockCanvasAndPost(dismissCanvas);
+//                    }
+//                }
+//            }
+//        }, 2000);
     }
 }
 
-class DismissHandler extends Handler {
-    long id;
-
-    public DismissHandler(long id) {
-        this.id = id;
-    }
-}
+//class DismissHandler extends Handler {
+//    long id;
+//
+//    public DismissHandler(long id) {
+//        this.id = id;
+//    }
+//}z
