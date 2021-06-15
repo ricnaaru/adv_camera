@@ -100,7 +100,6 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             PluginRegistry.Registrar registrar, Object args) {
         this.context = context;
         this.activity = registrar.activity();
-        Log.d("ricric", "id => " + id);
 
         methodChannel =
                 new MethodChannel(registrar.messenger(), "plugins.flutter.io/adv_camera/" + id);
@@ -254,7 +253,6 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
     @Override
     public void onMethodCall(MethodCall methodCall, @NonNull MethodChannel.Result result) {
-        Log.d("ricric", "methodCall.method => " + methodCall.method);
         switch (methodCall.method) {
             case "waitForCamera":
                 if (camera == null)
@@ -587,14 +585,16 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             }
         }
 
-        if (supportedModes != null && !supportedModes.contains(result)) {
-            if (supportedModes.size() > 0) {
-                result = supportedModes.get(0);
-            } else {
-                result = "";
-            }
-        } else {
+        if (supportedModes == null) {
             result = "off";
+        } else {
+            if (!supportedModes.contains(result)) {
+                if (supportedModes.size() > 0) {
+                    result = supportedModes.get(0);
+                } else {
+                    result = "";
+                }
+            }
         }
 
         return result;
