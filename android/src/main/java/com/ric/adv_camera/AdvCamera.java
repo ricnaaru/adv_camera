@@ -177,7 +177,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 } else if (motionEvent.getPointerCount() == 1 && motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                     SurfaceOrientedMeteringPointFactory factory = new SurfaceOrientedMeteringPointFactory(previewView.getWidth(), previewView.getHeight());
                     MeteringPoint point = factory.createPoint(motionEvent.getX(), motionEvent.getY());
-                    MeteringPoint point2 = new MeteringPoint(motionEvent.getX(), motionEvent.getY(), 100, null);
+//                    MeteringPoint point2 = new MeteringPoint(motionEvent.getX(), motionEvent.getY(), 100, null);
                     Log.d("ricric", "focusing " + point.getX() + ", " + point.getY());
                     FocusMeteringAction action = FocusMeteringAction.Builder.from(point).build();
                     CameraControl cameraControl = camera.getCameraControl();

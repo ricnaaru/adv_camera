@@ -134,6 +134,7 @@ class _CameraAppState extends State<CameraApp> {
       //     ),
       //   ],
       // ),
+      Texture(textureId: null,)
     );
   }
 
