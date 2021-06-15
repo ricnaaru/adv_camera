@@ -1,3 +1,8 @@
+## 2.0.1
+
+- Fix Android torchlight
+- Add turnoff Camera feature (so the flashlight can be used if the camera is turned off)
+
 ## 2.0.0+1-nullsafety
 
 - Add SavePath and MaxSize parameter on constructor

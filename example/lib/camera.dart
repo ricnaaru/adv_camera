@@ -69,7 +69,6 @@ class _CameraAppState extends State<CameraApp> {
                     cameraPreviewRatio: CameraPreviewRatio.r16_9,
                     focusRectColor: Colors.purple,
                     focusRectSize: 200,
-                    flashType: FlashType.torch,
                   ),
                 ),
               ],
