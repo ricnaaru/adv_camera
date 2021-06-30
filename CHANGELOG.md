@@ -1,3 +1,7 @@
+## 2.0.1+1
+
+- Fix minor bug on turnOn method
+
 ## 2.0.1
 
 - Fix Android torchlight

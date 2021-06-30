@@ -204,7 +204,7 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
                 
                 result(nil)
             } else if call.method == "turnOn" {
-                setupLivePreview()
+                self.setupLivePreview()
 
                 result(nil)
             } else if call.method == "switchCamera" {
