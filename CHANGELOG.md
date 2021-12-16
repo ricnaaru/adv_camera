@@ -1,3 +1,7 @@
+## 2.0.2
+
+- Fix android error for Q above context.getExternalFilesDir(null) replaces Environment.getExternalStorageState() 
+
 ## 2.0.1+1
 
 - Fix minor bug on turnOn method

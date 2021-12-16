@@ -26,8 +26,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d3001fd1-bb60-488f-aae6-3fa961c4d4ca" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/example/.flutter-plugins-dependencies" beforeDir="false" afterPath="$PROJECT_DIR$/example/.flutter-plugins-dependencies" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/ios/Flutter/flutter_export_environment.sh" beforeDir="false" afterPath="$PROJECT_DIR$/example/ios/Flutter/flutter_export_environment.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/example/lib/camera.dart" beforeDir="false" afterPath="$PROJECT_DIR$/example/lib/camera.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/example/pubspec.lock" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,7 +41,7 @@
   <component name="DefaultGradleProjectSettings">
     <option name="isMigrated" value="true" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[Pixel_3a_API_30_x86]" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[Pixel_4_API_30]" />
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
@@ -95,57 +99,21 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="1400" y="102" key="#Project_Structure" timestamp="1618320811824">
+    <state width="1234" height="277" key="GridCell.Tab.0.bottom" timestamp="1635437302075">
       <screen x="0" y="0" width="2560" height="1040" />
     </state>
-    <state x="1400" y="102" key="#Project_Structure/0.0.2560.1040@0.0.2560.1040" timestamp="1618320811824" />
-    <state x="1374" y="180" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1618320968490">
+    <state width="1234" height="277" key="GridCell.Tab.0.bottom/0.0.2560.1040@0.0.2560.1040" timestamp="1635437302075" />
+    <state width="1234" height="277" key="GridCell.Tab.0.center" timestamp="1635437302075">
       <screen x="0" y="0" width="2560" height="1040" />
     </state>
-    <state x="1374" y="180" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.2560.1040@0.0.2560.1040" timestamp="1618320968490" />
-    <state x="1719" y="234" key="#com.intellij.ide.util.MemberChooser" timestamp="1623231903811">
+    <state width="1234" height="277" key="GridCell.Tab.0.center/0.0.2560.1040@0.0.2560.1040" timestamp="1635437302075" />
+    <state width="1234" height="277" key="GridCell.Tab.0.left" timestamp="1635437302075">
       <screen x="0" y="0" width="2560" height="1040" />
     </state>
-    <state x="1719" y="234" key="#com.intellij.ide.util.MemberChooser/0.0.2560.1040@0.0.2560.1040" timestamp="1623231903811" />
-    <state x="1612" y="245" key="#example/lib/main.dart" timestamp="1618320824602">
+    <state width="1234" height="277" key="GridCell.Tab.0.left/0.0.2560.1040@0.0.2560.1040" timestamp="1635437302075" />
+    <state width="1234" height="277" key="GridCell.Tab.0.right" timestamp="1635437302075">
       <screen x="0" y="0" width="2560" height="1040" />
     </state>
-    <state x="1612" y="245" key="#example/lib/main.dart/0.0.2560.1040@0.0.2560.1040" timestamp="1618320824602" />
-    <state x="1373" y="105" width="1094" height="840" key="AVDManager" timestamp="1618320246349">
-      <screen x="0" y="0" width="2560" height="1040" />
-    </state>
-    <state x="1373" y="105" width="1094" height="840" key="AVDManager/0.0.2560.1040@0.0.2560.1040" timestamp="1618320246349" />
-    <state x="1739" y="274" key="AndroidProcessChooserDialog" timestamp="1618320801640">
-      <screen x="0" y="0" width="2560" height="1040" />
-    </state>
-    <state x="1739" y="274" key="AndroidProcessChooserDialog/0.0.2560.1040@0.0.2560.1040" timestamp="1618320801640" />
-    <state width="1234" height="277" key="GridCell.Tab.0.bottom" timestamp="1623236223124">
-      <screen x="0" y="0" width="2560" height="1040" />
-    </state>
-    <state width="1234" height="277" key="GridCell.Tab.0.bottom/0.0.2560.1040@0.0.2560.1040" timestamp="1623236223124" />
-    <state width="1234" height="277" key="GridCell.Tab.0.center" timestamp="1623236223124">
-      <screen x="0" y="0" width="2560" height="1040" />
-    </state>
-    <state width="1234" height="277" key="GridCell.Tab.0.center/0.0.2560.1040@0.0.2560.1040" timestamp="1623236223124" />
-    <state width="1234" height="277" key="GridCell.Tab.0.left" timestamp="1623236223124">
-      <screen x="0" y="0" width="2560" height="1040" />
-    </state>
-    <state width="1234" height="277" key="GridCell.Tab.0.left/0.0.2560.1040@0.0.2560.1040" timestamp="1623236223124" />
-    <state width="1234" height="277" key="GridCell.Tab.0.right" timestamp="1623236223124">
-      <screen x="0" y="0" width="2560" height="1040" />
-    </state>
-    <state width="1234" height="277" key="GridCell.Tab.0.right/0.0.2560.1040@0.0.2560.1040" timestamp="1623236223124" />
-    <state x="1400" y="99" key="SettingsEditor" timestamp="1618321010883">
-      <screen x="0" y="0" width="2560" height="1040" />
-    </state>
-    <state x="1400" y="99" key="SettingsEditor/0.0.2560.1040@0.0.2560.1040" timestamp="1618321010883" />
-    <state x="1627" y="258" width="585" height="534" key="find.popup" timestamp="1623231718619">
-      <screen x="0" y="0" width="2560" height="1040" />
-    </state>
-    <state x="1627" y="258" width="585" height="534" key="find.popup/0.0.2560.1040@0.0.2560.1040" timestamp="1623231718619" />
-    <state x="1576" y="245" key="run.anything.popup" timestamp="1618313000713">
-      <screen x="0" y="0" width="2560" height="1040" />
-    </state>
-    <state x="1576" y="245" key="run.anything.popup/0.0.2560.1040@0.0.2560.1040" timestamp="1618313000713" />
+    <state width="1234" height="277" key="GridCell.Tab.0.right/0.0.2560.1040@0.0.2560.1040" timestamp="1635437302075" />
   </component>
 </project>

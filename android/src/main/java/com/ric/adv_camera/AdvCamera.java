@@ -229,6 +229,30 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         folder = new File(this.savePath);
         if (!folder.exists()) {
             folder.mkdirs();
+            if (!folder.exists()) {
+                folder = new File(Environment.getExternalStorageDirectory() + "/images");
+                if (!folder.exists()) {
+                    folder.mkdirs();
+                    if (!folder.exists()) {
+                        folder = new File(Environment.getDataDirectory() + "/images");
+                        if (!folder.exists()) {
+                            folder.mkdirs();
+                            if (!folder.exists()) {
+                                folder = new File(Environment.getRootDirectory() + "/images");
+                                if (!folder.exists()) {
+                                    folder.mkdirs();
+                                    if (!folder.exists()) {
+                                        folder = new File(context.getExternalFilesDir(null) + "/images");
+                                        if (!folder.exists()) {
+                                            folder.mkdirs();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         surfaceHolder = imgSurface.getHolder();
@@ -857,6 +881,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         try {
             OutputStream output;
             File file = new File(folder.getAbsolutePath(), fileNamePrefix + "_" + dateFormat.format(currentTime) + ".jpg");
+            file.createNewFile();
             try {
                 output = new FileOutputStream(file);
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, output);

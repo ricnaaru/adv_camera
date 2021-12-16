@@ -129,7 +129,7 @@ class _CameraAppState extends State<CameraApp> {
             heroTag: "capture",
             child: Icon(Icons.camera),
             onPressed: () {
-              cameraController!.captureImage();
+              cameraController!.captureImage(maxSize: 256);
             },
           ),
         ],
