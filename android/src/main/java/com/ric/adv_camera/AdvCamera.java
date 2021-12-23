@@ -45,9 +45,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.platform.PlatformView;
 
 class WaitForCameraObject {
@@ -97,14 +97,14 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     AdvCamera(
             int id,
             final Context context,
-            PluginRegistry.Registrar registrar, Object args) {
+            Activity activity, BinaryMessenger messenger, Object args) {
         this.context = context;
-        this.activity = registrar.activity();
+        this.activity = activity;
 
         methodChannel =
-                new MethodChannel(registrar.messenger(), "plugins.flutter.io/adv_camera/" + id);
+                new MethodChannel(messenger, "plugins.flutter.io/adv_camera/" + id);
         methodChannel.setMethodCallHandler(this);
-        view = registrar.activity().getLayoutInflater().inflate(com.ric.adv_camera.R.layout.activity_camera, null);
+        view = activity.getLayoutInflater().inflate(com.ric.adv_camera.R.layout.activity_camera, null);
         imgSurface = view.findViewById(com.ric.adv_camera.R.id.imgSurface);
         final SurfaceView x = view.findViewById(R.id.TransparentView);
         x.setZOrderMediaOverlay(true);
@@ -238,15 +238,9 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                         if (!folder.exists()) {
                             folder.mkdirs();
                             if (!folder.exists()) {
-                                folder = new File(Environment.getRootDirectory() + "/images");
+                                folder = new File(context.getExternalFilesDir(null) + "/images");
                                 if (!folder.exists()) {
                                     folder.mkdirs();
-                                    if (!folder.exists()) {
-                                        folder = new File(context.getExternalFilesDir(null) + "/images");
-                                        if (!folder.exists()) {
-                                            folder.mkdirs();
-                                        }
-                                    }
                                 }
                             }
                         }
