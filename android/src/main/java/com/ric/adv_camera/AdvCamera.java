@@ -50,6 +50,16 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.platform.PlatformView;
 
+
+interface CustomFragmentLifecycleListener {
+    // These methods are the different events and
+    // need to pass relevant arguments related to the event triggered
+    void onPause();
+
+    // or when data has been loaded
+    void onResume();
+}
+
 class WaitForCameraObject {
     MethodChannel.Result o;
 
@@ -116,10 +126,14 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
         imgSurface.setFocusable(true);
         imgSurface.setFocusableInTouchMode(true);
 
-        cameraFragment.listener = new FragmentLifecycleListener() {
+        cameraFragment.listener = new CustomFragmentLifecycleListener() {
             @Override
             public void onPause() {
+                Log.d("ricric", "pause " +  (camera != null) );
                 if (camera != null) {
+                    Camera.Parameters par = camera.getParameters();
+                    par.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+                    camera.setParameters(par);
                     camera.stopPreview();
                     camera.release();
                     camera = null;

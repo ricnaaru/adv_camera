@@ -115,7 +115,7 @@ public class AdvCameraPlugin implements FlutterPlugin, MethodCallHandler, Activi
 
     @Override
     public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
-
+        activityPluginBinding = binding;
     }
 
     @Override
