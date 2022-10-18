@@ -1,3 +1,11 @@
+## 3.0.0
+
+* Support for Flutter 3
+
+## 2.0.3+2
+
+- More script tidy-up
+
 ## 2.0.3+2
 
 - More script tidy-up

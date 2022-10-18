@@ -268,6 +268,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
         jpegCallback = new Camera.PictureCallback() {
             public void onPictureTaken(byte[] data, Camera camera) {
+                Log.d("ricric", "start 1");
                 camera.stopPreview();
 
                 cancelSavePicTaskIfNeed();
@@ -280,6 +281,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
     }
 
     private void captureImage() {
+        Log.d("ricric", "start 6");
         camera.takePicture(null, null, jpegCallback);
     }
 
@@ -359,6 +361,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                     this.maxSize = maxSize;
                 }
 
+                Log.d("ricric", "start 7");
                 captureImage();
 
                 result.success(true);
@@ -746,6 +749,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
 
         @Override
         protected String doInBackground(Void... params) {
+            Log.d("ricric", "start 2");
             try {
                 return saveToSDCard(data, rotation);
             } catch (Exception e) {
@@ -795,6 +799,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
             options.inJustDecodeBounds = false;
             Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
 
+            Log.d("ricric", "start 3");
             if (Build.MODEL.equalsIgnoreCase("LGM-G600L")) {
                 //for now there's a case for LGM-G600L phone that its rotation degree exceeded by 90
                 rotation -= 90;
@@ -809,6 +814,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                 bitmap = Bitmap.createScaledBitmap(bitmap, width,
                         height, true);
             }
+            Log.d("ricric", "start 4");
 
             if (rotation != 0) {
                 Matrix mat = new Matrix();
@@ -861,6 +867,7 @@ public class AdvCamera implements MethodChannel.MethodCallHandler,
                     }
                 }
             }
+            Log.d("ricric", "start 5");
         } catch (Exception e) {
             e.printStackTrace();
         }
