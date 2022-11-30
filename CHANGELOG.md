@@ -1,3 +1,7 @@
+## 3.0.1
+
+* Support for Android 33
+
 ## 3.0.0
 
 * Support for Flutter 3
