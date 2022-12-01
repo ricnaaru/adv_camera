@@ -1,3 +1,7 @@
+## 3.0.2
+
+* Permission fixes for Android 33
+
 ## 3.0.1
 
 * Support for Android 33

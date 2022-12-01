@@ -41,7 +41,6 @@ public class CameraFragment extends Fragment {
 
     @Override
     public void onPause() {
-        Log.d("AdvCamera", "onPause");
         super.onPause();
         if (listener != null)
             listener.onPause();
@@ -57,7 +56,6 @@ public class CameraFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
-        Log.d("AdvCamera", "onDestroyView");
         super.onDestroyView();
     }
 }

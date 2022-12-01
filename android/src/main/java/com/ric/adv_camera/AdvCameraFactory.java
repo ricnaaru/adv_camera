@@ -2,6 +2,7 @@ package com.ric.adv_camera;
 
 import android.app.Activity;
 import android.content.Context;
+import android.util.Log;
 
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.PluginRegistry;

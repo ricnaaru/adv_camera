@@ -2,6 +2,7 @@ package com.ric.adv_camera;
 
 import android.Manifest;
 import android.app.Activity;
+import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -13,6 +14,8 @@ import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
@@ -65,8 +68,11 @@ public class AdvCameraPlugin implements FlutterPlugin, MethodCallHandler, Activi
     }
 
     private void checkForPermission(final MethodChannel.Result result) {
-        Dexter.withActivity(activityPluginBinding.getActivity())
-                .withPermissions(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE)
+        List<String> s =
+                (Build.VERSION.SDK_INT >= 33) ? Collections.singletonList(Manifest.permission.CAMERA) : Arrays.asList(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE);
+
+        Dexter.withContext(activityPluginBinding.getActivity())
+                .withPermissions(s)
                 .withListener(new MultiplePermissionsListener() {
                     @Override
                     public void onPermissionsChecked(MultiplePermissionsReport report) {
