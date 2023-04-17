@@ -1,6 +1,6 @@
 name: adv_camera
 description: An advanced camera with focus (with focus rectangle) and zoom feature.
-version: 3.0.2
+version: 3.0.3
 homepage: https://github.com/ricnaaru/adv_camera
 
 environment:

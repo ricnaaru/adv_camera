@@ -1,3 +1,7 @@
+## 3.0.3
+
+* Up ios deployment target to 11
+
 ## 3.0.2
 
 * Permission fixes for Android 33
