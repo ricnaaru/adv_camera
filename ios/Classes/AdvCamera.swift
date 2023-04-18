@@ -454,7 +454,7 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
     
     func setupLivePreview() {
         if captureSession == nil {
-            captureSession = AVCaptureSession()
+            handle()
         }
 
         videoPreviewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
