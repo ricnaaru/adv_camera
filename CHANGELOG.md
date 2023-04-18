@@ -1,3 +1,7 @@
+## 3.0.3+4
+
+* Fix switch camera not properly pause the current active camera
+
 ## 3.0.3+3
 
 * Minor fix on IOS
