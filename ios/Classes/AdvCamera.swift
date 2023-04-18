@@ -453,6 +453,10 @@ public class AdvCameraView : NSObject, FlutterPlatformView {
     }
     
     func setupLivePreview() {
+        if captureSession == nil {
+            captureSession = AVCaptureSession()
+        }
+
         videoPreviewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
         
         videoPreviewLayer.videoGravity = .resizeAspectFill

@@ -1,3 +1,7 @@
+## 3.0.3+2
+
+* Minor fix on IOS
+
 ## 3.0.3
 
 * Up ios deployment target to 11
