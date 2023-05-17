@@ -1,3 +1,7 @@
+## 3.0.4
+
+* Fix camera being active after unused on IOS
+
 ## 3.0.3+4
 
 * Fix switch camera not properly pause the current active camera

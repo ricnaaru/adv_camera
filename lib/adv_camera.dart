@@ -66,6 +66,14 @@ class _AdvCameraState extends State<AdvCamera> {
   late CameraSessionPreset _cameraSessionPreset;
   late FlashType _flashType;
   bool _hasPermission = false;
+  AdvCameraController? controller;
+
+  @override
+  void dispose() {
+    controller?.channel.invokeMethod("dispose");
+    controller?.channel.setMethodCallHandler(null);
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -245,6 +253,8 @@ class _AdvCameraState extends State<AdvCamera> {
       id,
       this,
     );
+
+    this.controller = controller;
 
     if (widget.onCameraCreated != null) {
       widget.onCameraCreated!(controller);
