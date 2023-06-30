@@ -50,5 +50,9 @@
     <key>NSPhotoLibraryUsageDescription</key>
     <string>Allows you to capture your best moment</string>
     
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
 </dict>
 </plist>

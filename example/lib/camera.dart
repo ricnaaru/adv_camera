@@ -95,7 +95,6 @@ class _CameraAppState extends State<CameraApp> {
             heroTag: "GoToNextPage",
             child: Icon(Icons.navigate_next),
             onPressed: () async {
-              await cameraController!.turnOffCamera();
               await Navigator.push(
                 context,
                 MaterialPageRoute(

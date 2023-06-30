@@ -1,3 +1,9 @@
+## 3.1.0
+
+* Rework on ios swift code
+* Attach route aware mixin now, so the widget will turn off the camera itself if not needed
+* Upgrade to flutter latest
+
 ## 3.0.4
 
 * Fix camera being active after unused on IOS
