@@ -6,12 +6,14 @@ class LifecycleEventHandler extends WidgetsBindingObserver {
   final AsyncCallback? onInactive;
   final AsyncCallback? onPaused;
   final AsyncCallback? onDetached;
+  final AsyncCallback? onHidden;
 
   LifecycleEventHandler({
     this.onResumed,
     this.onInactive,
     this.onPaused,
     this.onDetached,
+    this.onHidden,
   });
 
   @override
@@ -33,6 +35,8 @@ class LifecycleEventHandler extends WidgetsBindingObserver {
         if (onDetached != null)
         await onDetached!();
         break;
+      case AppLifecycleState.hidden:
+        await onHidden?.call();
     }
   }
 }
