@@ -1,3 +1,7 @@
+## 3.2.0
+
+* Upgrade to flutter 3.32.0
+
 ## 3.1.0
 
 * Rework on ios swift code
